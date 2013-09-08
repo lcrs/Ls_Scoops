@@ -113,14 +113,14 @@ SPARKDESTINATION=.
 # note that there must be a 'Tab' character as the first character on
 # each line.
 #
-SPARK_CFILES = scoops.c
+SPARK_CFILES = 
 
 #
 # sparkInvert_16fp depends on the half data type (a 16bit floating point 
 # emulation) as defined in the openexr distribution which you can obtain
 # from http://openexr.com.
 #
-SPARK_C++FILES =
+SPARK_C++FILES = scoops.c
  
 #
 # Please don't touch these four lines
@@ -128,8 +128,8 @@ SPARK_C++FILES =
 OFILES = $(SPARK_CFILES:.c=.o)
 SFILES = $(SPARK_CFILES:.c=.$(SPARK_EXTENSION))
 
-OFILES_C++ = $(SPARK_C++FILES:.C=.o)
-SFILES_C++ = $(SPARK_C++FILES:.C=.$(SPARK_EXTENSION))
+OFILES_C++ = $(SPARK_C++FILES:.c=.o)
+SFILES_C++ = $(SPARK_C++FILES:.c=.$(SPARK_EXTENSION))
 
 #
 # The following script determines whether or not Sparks can be compiled
@@ -163,3 +163,4 @@ $(OFILES_C++) : %.o : %.C
 	@echo "MAKING SPARK ..."
 	$(CXX) $(CFLAGS) -c $(SPARKSOURCE)/$*.C -o $(SPARKSOURCE)/$*.o
 	$(CXX) $(LDFLAGS) $(SPARKSOURCE)/$*.o -o $(SPARKDESTINATION)/$*.$(SPARK_EXTENSION)
+	@echo "DONE."
