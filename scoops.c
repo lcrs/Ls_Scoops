@@ -107,6 +107,11 @@ unsigned long *SparkInteract(SparkInfoStruct si, int sx, int sy, float pressure,
 				SparkBoolean6.Value = 0;
 				sparkControlUpdate(6);
 				cbPick(0, si);
+				sparkChClear(1, 9);
+				sparkChClear(1, 10);
+				sparkChClear(1, 11);
+				sparkChClear(1, 12);
+				SparkAnalyse(si);
 			}
 		}
 	}
