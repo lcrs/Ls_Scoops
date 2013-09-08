@@ -167,6 +167,8 @@ unsigned long *SparkProcess(SparkInfoStruct si) {
 		return(NULL);
 	}
 
+	sparkCopyBuffer(input.Buffer, result.Buffer);
+
 	return(result.Buffer);
 }
 
