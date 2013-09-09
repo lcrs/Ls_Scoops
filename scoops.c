@@ -5,17 +5,39 @@
 #include "/usr/discreet/smoke_2013.2.53/sparks/spark.h"
 #include "half.h"
 
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#endif
+
 typedef struct {
 	float r, g, b;
 } colour;
+
+typedef struct {
+	float x, y;
+} vert;
+
+static int sampling = 0;
+
+unsigned long *cbPick(int v, SparkInfoStruct i);
 
 float luma(colour c) {
 	return(0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b);
 }
 
-ulong* cbPick(int v, SparkInfoStruct i);
-
-int sampling = 0;
+int getbuf(int n, SparkMemBufStruct *b) {
+	if(!sparkMemGetBuffer(n, b)) {
+		printf("Failed to get buffer %d\n", n);
+		return(0);
+	}
+	if(!(b->BufState & MEMBUF_LOCKED)) {
+		printf("Failed to lock buffer %d\n", n);
+		return(0);
+	}
+	return(1);
+}
 
 // UI
 SparkBooleanStruct SparkBoolean6 = {
@@ -119,7 +141,7 @@ unsigned long *SparkInteract(SparkInfoStruct si, int sx, int sy, float pressure,
 }
 
 // Set keys
-void upCol(SparkInfoStruct si, SparkMemBufStruct buf) {
+void sample(SparkInfoStruct si, SparkMemBufStruct buf) {
 	colour sampled;
 
 	switch(buf.BufDepth) {
@@ -152,28 +174,10 @@ void upCol(SparkInfoStruct si, SparkMemBufStruct buf) {
 unsigned long *SparkProcess(SparkInfoStruct si) {
 	SparkMemBufStruct result, input;
 
-	// Check input buffer is happy
-	if(!sparkMemGetBuffer(2, &input)) {
-		printf("Failed to get input buffer in process\n");
-		return(NULL);
-	}
-	if(!(input.BufState & MEMBUF_LOCKED)) {
-		printf("Failed to lock input buffer in process\n");
-		return(NULL);
-	}
-
-	// Check result buffer is happy
-	if(!sparkMemGetBuffer(1, &result)) {
-		printf("Failed to get result buffer in process\n");
-		return(NULL);
-	}
-	if(!(result.BufState & MEMBUF_LOCKED)) {
-		printf("Failed to lock result buffer in process\n");
-		return(NULL);
-	}
-
+	if(!getbuf(2, &input)) return(NULL);
+	if(!getbuf(1, &result)) return(NULL);
 	sparkCopyBuffer(input.Buffer, result.Buffer);
-
+	memset(result.Buffer, 0, result.BufSize);
 	return(result.Buffer);
 }
 
@@ -181,19 +185,48 @@ unsigned long *SparkProcess(SparkInfoStruct si) {
 unsigned long *SparkAnalyse(SparkInfoStruct si) {
 	SparkMemBufStruct input;
 
-	// Check input buffer is happy
-	if(!sparkMemGetBuffer(2, &input)) {
-		printf("Failed to get input buffer in analyse\n");
-		return(NULL);
-	}
-	if(!(input.BufState & MEMBUF_LOCKED)) {
-		printf("Failed to lock input buffer in analyse\n");
-		return(NULL);
-	}
-
-	upCol(si, input);
-
+	if(!getbuf(2, &input)) return(NULL);
+	sample(si, input);
 	return(NULL);
+}
+
+// Further working
+void SparkOverlay(SparkInfoStruct si, float zoom) {
+	float ratio = sparkGetViewerRatio();
+
+	if(zoom < 1.0) {
+	    zoom = 1.0 / (2.0 - zoom);
+	}
+
+	float w = si.FrameWidth * ratio * zoom;
+	float h = si.FrameHeight * zoom;
+	vert o = {si.FrameBufferX, si.FrameBufferY};
+	vert p = {o.x + w, o.y + h};
+
+	SparkMemBufStruct input;
+	if(!getbuf(2, &input)) return;
+
+	glColor3f(0.003, 0.002, 0.001);
+	glEnable(GL_LINE_SMOOTH);
+	glLineWidth(2.5);
+	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+
+	char *b;
+	for(int j = 0; j < input.BufHeight; j++) {
+		b = (char *) input.Buffer + input.Stride * j;
+		glBegin(GL_LINE_STRIP);
+			half *pix;
+			for(int i = 0; i < input.BufWidth; i++) {
+				b += input.Inc;
+				pix = (half *) b;
+				glVertex2f(o.x + (float) i * ratio * zoom, o.y + (float) *pix * h);
+			}
+		glEnd();
+	}
+	glLineWidth(1.0);
+	glDisable(GL_BLEND);
 }
 
 // Number of clips required
