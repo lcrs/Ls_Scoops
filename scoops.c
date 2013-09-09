@@ -99,6 +99,9 @@ SparkFloatStruct SparkFloat12 = {
 	(char *) "Luma %f",			// Name
 	NULL						// Callback
 };
+SparkFloatColorStruct SparkFloatColor39 = {
+	0.016, 0.010, 0.024, NULL	// RGB, callback
+};
 
 // Pick button callback
 unsigned long* cbPick(int v, SparkInfoStruct i) {
@@ -206,26 +209,23 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 	SparkMemBufStruct input;
 	if(!getbuf(2, &input)) return;
 
-	glColor3f(0.003, 0.002, 0.001);
-	glEnable(GL_LINE_SMOOTH);
-	glLineWidth(2.5);
-	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-
-	char *b;
+	char *a;
 	for(int j = 0; j < input.BufHeight; j++) {
-		b = (char *) input.Buffer + input.Stride * j;
+		a = (char *) input.Buffer + input.Stride * j;
 		glBegin(GL_LINE_STRIP);
-			half *pix;
+			half r, g, b;
 			for(int i = 0; i < input.BufWidth; i++) {
-				b += input.Inc;
-				pix = (half *) b;
-				glVertex2f(o.x + (float) i * ratio * zoom, o.y + (float) *pix * h);
+				a += input.Inc;
+				r = SparkFloatColor39.Red;
+				g = SparkFloatColor39.Green;
+				b = SparkFloatColor39.Blue;
+				glColor3f(r, g, b);
+				glVertex2f(o.x + i * ratio * zoom, o.y + *((half *) (a + 2)) * h);
 			}
 		glEnd();
 	}
-	glLineWidth(1.0);
 	glDisable(GL_BLEND);
 }
 
@@ -240,6 +240,8 @@ void SparkMemoryTempBuffers(void) {
 
 // Module level, not desktop
 unsigned int SparkInitialise(SparkInfoStruct sparkInfo) {
+	sparkControlTitle(SPARK_CONTROL_1, (char *) "Sampler");
+	sparkControlTitle(SPARK_CONTROL_2, (char *) "Scopes");
 	return(SPARK_MODULE);
 }
 
