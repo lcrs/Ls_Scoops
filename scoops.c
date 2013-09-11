@@ -20,6 +20,7 @@ typedef struct {
 } vert;
 
 static int sampling = 0;
+static int dirty = 0;
 
 unsigned long *cbPick(int v, SparkInfoStruct i);
 
@@ -102,6 +103,42 @@ SparkFloatStruct SparkFloat12 = {
 SparkFloatColorStruct SparkFloatColor39 = {
 	0.016, 0.010, 0.024, NULL	// RGB, callback
 };
+SparkIntStruct SparkInt66 = {
+	0,							// Initial
+	0,							// Min
+	32768,						// Max
+	1,							// Increment
+	SPARK_FLAG_X,				// Flags
+	(char *) "From X %d",		// Name
+	NULL						// Callback
+};
+SparkIntStruct SparkInt67 = {
+	0,							// Initial
+	0,							// Min
+	32768,						// Max
+	1,							// Increment
+	SPARK_FLAG_Y,				// Flags
+	(char *) "From Y %d",		// Name
+	NULL						// Callback
+};
+SparkIntStruct SparkInt73 = {
+	0,							// Initial
+	0,							// Min
+	32768,						// Max
+	1,							// Increment
+	SPARK_FLAG_X,				// Flags
+	(char *) "To X %d",			// Name
+	NULL						// Callback
+};
+SparkIntStruct SparkInt74 = {
+	0,							// Initial
+	0,							// Min
+	32768,						// Max
+	1,							// Increment
+	SPARK_FLAG_Y,				// Flags
+	(char *) "To Y %d",			// Name
+	NULL						// Callback
+};
 
 // Pick button callback
 unsigned long* cbPick(int v, SparkInfoStruct i) {
@@ -116,8 +153,8 @@ unsigned long* cbPick(int v, SparkInfoStruct i) {
 }
 
 // Clicky draggy callback
-unsigned long *SparkInteract(SparkInfoStruct si, int sx, int sy, float pressure, float vx, float vy, float vz) {
-	if(SparkBoolean6.Value == 1) {
+unsigned long* SparkInteract(SparkInfoStruct si, int sx, int sy, float pressure, float vx, float vy, float vz) {
+	if(si.Context == SPARK_MODE_CONTROL1 && SparkBoolean6.Value == 1) {
 		if(pressure > 0.0) {
 			// Pick sample point
 			sampling = 1;
@@ -139,8 +176,47 @@ unsigned long *SparkInteract(SparkInfoStruct si, int sx, int sy, float pressure,
 				SparkAnalyse(si);
 			}
 		}
+		sparkViewingDraw();
+	}
+	if(si.Context == SPARK_MODE_CONTROL3) {
+		if(sampling) {
+			SparkInt73.Value = vx;
+			SparkInt74.Value = vy;
+			sparkControlUpdate(73);
+			sparkControlUpdate(74);
+			if(pressure == 0.0) {
+				sampling = 0;
+			}
+		} else {
+			if(pressure > 0.0) {
+				sampling = 1;
+				SparkInt66.Value = vx;
+				SparkInt67.Value = vy;
+				sparkControlUpdate(66);
+				sparkControlUpdate(67);
+				SparkInt73.Value = vx;
+				SparkInt74.Value = vy;
+				sparkControlUpdate(73);
+				sparkControlUpdate(74);
+			}
+		}
+		sparkViewingDraw();
 	}
 	return(NULL);
+}
+
+// Miscellaneous events callback
+void SparkEvent(SparkModuleEvent e) {
+	switch(e) {
+		case SPARK_EVENT_CONTROL1:
+		case SPARK_EVENT_CONTROL2:
+		case SPARK_EVENT_CONTROL3:
+			dirty = 1;
+			sparkReprocess();
+			break;
+		default:
+			break;
+	}
 }
 
 // Set keys
@@ -177,10 +253,19 @@ void sample(SparkInfoStruct si, SparkMemBufStruct buf) {
 unsigned long *SparkProcess(SparkInfoStruct si) {
 	SparkMemBufStruct result, input;
 
-	if(!getbuf(2, &input)) return(NULL);
 	if(!getbuf(1, &result)) return(NULL);
-	sparkCopyBuffer(input.Buffer, result.Buffer);
-	memset(result.Buffer, 0, result.BufSize);
+
+	if(!dirty) return(result.Buffer);
+
+	if(si.Context == SPARK_MODE_CONTROL2) {
+		// Scopes mode
+		memset(result.Buffer, 0, result.BufSize);
+	} else {
+		if(!getbuf(2, &input)) return(NULL);
+		sparkCopyBuffer(input.Buffer, result.Buffer);
+	}
+
+	dirty = 0;
 	return(result.Buffer);
 }
 
@@ -206,6 +291,33 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 	vert o = {si.FrameBufferX, si.FrameBufferY};
 	vert p = {o.x + w, o.y + h};
 
+	if(si.Context == SPARK_MODE_CONTROL1) {
+		// Sampler
+		glBegin(GL_LINE_LOOP);
+		glColor3f(1.0, 0.0, 0.0);
+		glVertex2f(o.x + (ratio * zoom * (float)SparkInt7.Value - 10.0), o.y + (zoom * (float)SparkInt8.Value) - 10.0);
+		glVertex2f(o.x + (ratio * zoom * (float)SparkInt7.Value + 10.0), o.y + (zoom * (float)SparkInt8.Value) - 10.0);
+		glVertex2f(o.x + (ratio * zoom * (float)SparkInt7.Value + 10.0), o.y + (zoom * (float)SparkInt8.Value) + 10.0);
+		glVertex2f(o.x + (ratio * zoom * (float)SparkInt7.Value - 10.0), o.y + (zoom * (float)SparkInt8.Value) + 10.0);
+		glEnd();
+		return;
+	}
+	if(si.Context == SPARK_MODE_CONTROL3) {
+		// Slicer
+		glBegin(GL_LINES);
+		glColor3f(1.0, 0.0, 0.0);
+		glVertex2f(o.x + (ratio * zoom * (float)SparkInt66.Value), o.y + (zoom * (float)SparkInt67.Value));
+		glVertex2f(o.x + (ratio * zoom * (float)SparkInt73.Value), o.y + (zoom * (float)SparkInt74.Value));
+		glEnd();
+
+		// Now the hard bit...
+		SparkMemBufStruct input;
+		if(!getbuf(2, &input)) return;
+		
+		return;
+	}
+
+	// Scopes
 	SparkMemBufStruct input;
 	if(!getbuf(2, &input)) return;
 
@@ -242,12 +354,18 @@ void SparkMemoryTempBuffers(void) {
 unsigned int SparkInitialise(SparkInfoStruct sparkInfo) {
 	sparkControlTitle(SPARK_CONTROL_1, (char *) "Sampler");
 	sparkControlTitle(SPARK_CONTROL_2, (char *) "Scopes");
+	sparkControlTitle(SPARK_CONTROL_3, (char *) "Slicing");
 	return(SPARK_MODULE);
 }
 
-// Bit depths, we love them all
+// Bit depths yo
 int SparkIsInputFormatSupported(SparkPixelFormat fmt) {
-	return(1);
+	switch(fmt) {
+		case SPARKBUF_RGB_48_3x16_FP:
+			return(1);
+		default:
+			return(0);
+	}
 }
 
 // Stop
