@@ -20,7 +20,8 @@ typedef struct {
 } vert;
 
 static int sampling = 0;
-static int dirty = 0;
+static int dirty = 1;
+static int nextmode = 0;
 
 unsigned long *cbPick(int v, SparkInfoStruct i);
 
@@ -205,20 +206,6 @@ unsigned long* SparkInteract(SparkInfoStruct si, int sx, int sy, float pressure,
 	return(NULL);
 }
 
-// Miscellaneous events callback
-void SparkEvent(SparkModuleEvent e) {
-	switch(e) {
-		case SPARK_EVENT_CONTROL1:
-		case SPARK_EVENT_CONTROL2:
-		case SPARK_EVENT_CONTROL3:
-			dirty = 1;
-			sparkReprocess();
-			break;
-		default:
-			break;
-	}
-}
-
 // Set keys
 void sample(SparkInfoStruct si, SparkMemBufStruct buf) {
 	colour sampled;
@@ -249,24 +236,58 @@ void sample(SparkInfoStruct si, SparkMemBufStruct buf) {
 	sparkControlUpdate(12);
 }
 
+// Miscellaneous events callback
+void SparkEvent(SparkModuleEvent e) {
+	switch(e) {
+		case SPARK_EVENT_CONTROL1:
+			printf("event sampler\n");
+			dirty = 1;
+			nextmode = 1;
+			sparkReprocess();
+			break;
+		case SPARK_EVENT_CONTROL2:
+			printf("event scopes\n");
+			dirty = 1;
+			nextmode = 2;
+			sparkReprocess();
+			break;
+		case SPARK_EVENT_CONTROL3:
+			printf("event slicer\n");
+			dirty = 1;
+			nextmode = 3;
+			sparkReprocess();
+			break;
+		case SPARK_EVENT_EXIT:
+			dirty = 1;
+		default:
+			break;
+	}
+}
+
 // Work
 unsigned long *SparkProcess(SparkInfoStruct si) {
 	SparkMemBufStruct result, input;
 
 	if(!getbuf(1, &result)) return(NULL);
 
-	if(!dirty) return(result.Buffer);
-
-	if(si.Context == SPARK_MODE_CONTROL2) {
-		// Scopes mode
-		memset(result.Buffer, 0, result.BufSize);
-	} else {
-		if(!getbuf(2, &input)) return(NULL);
-		sparkCopyBuffer(input.Buffer, result.Buffer);
+	if(!dirty) {
+		printf("process not dirty\n");
+		return(result.Buffer);
 	}
 
-	dirty = 0;
-	return(result.Buffer);
+	if(nextmode == 2) {
+		// Scopes mode
+		printf("process scopes\n");
+		memset(result.Buffer, 0, result.BufSize);
+		dirty = 0;
+		return(result.Buffer);
+	} else {
+		printf("process other\n");
+		if(!getbuf(2, &input)) return(NULL);
+		sparkCopyBuffer(input.Buffer, result.Buffer);
+		dirty = 0;
+		return(result.Buffer);
+	}
 }
 
 // More work
@@ -276,6 +297,21 @@ unsigned long *SparkAnalyse(SparkInfoStruct si) {
 	if(!getbuf(2, &input)) return(NULL);
 	sample(si, input);
 	return(NULL);
+}
+
+// Return closest pixel value from buffer
+half closest(SparkMemBufStruct *in, float x, float y, int colour) {
+	if(x > in->BufWidth || y > in->BufHeight) return(0.0);
+	if(x < 0 || y < 0) return(0.0);
+
+	char *b = (char *) in->Buffer;
+	b += in->Stride * (int) y + in->Inc * (int) x + colour * sizeof(half);
+
+	if((b > (char *) in->Buffer + in->BufSize) || (b < (char *) in->Buffer)) {
+		// Safety!
+		return(0.0);
+	}
+	return(*((half *) b));
 }
 
 // Further working
@@ -305,15 +341,57 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 	if(si.Context == SPARK_MODE_CONTROL3) {
 		// Slicer
 		glBegin(GL_LINES);
-		glColor3f(1.0, 0.0, 0.0);
+		glColor3f(1.0, 1.0, 1.0);
 		glVertex2f(o.x + (ratio * zoom * (float)SparkInt66.Value), o.y + (zoom * (float)SparkInt67.Value));
 		glVertex2f(o.x + (ratio * zoom * (float)SparkInt73.Value), o.y + (zoom * (float)SparkInt74.Value));
 		glEnd();
 
-		// Now the hard bit...
+		// Now the hard messy bit...
 		SparkMemBufStruct input;
 		if(!getbuf(2, &input)) return;
-		
+
+		int colour = 0;
+		glBegin(GL_LINE_STRIP);
+		glColor3f(1.0, 0.0, 0.0);
+		float dx = (float) (SparkInt73.Value - SparkInt66.Value);
+		float dy = (float) (SparkInt74.Value - SparkInt67.Value);
+		float steps = sqrt(dx * dx + dy * dy);
+		for(float i = 0.0; i <= 1.0; i += 1.0/steps) {
+			float x = (float) SparkInt66.Value + i * dx;
+			float y = (float) SparkInt67.Value + i * dy;
+			float graph = closest(&input, x, y, colour);
+			glVertex2f(o.x + (ratio * zoom * x), o.y + (zoom * (y + graph * 100.0)));
+		}
+		glEnd();
+
+		colour = 1;
+		glBegin(GL_LINE_STRIP);
+		glColor3f(0.0, 1.0, 0.0);
+		dx = (float) (SparkInt73.Value - SparkInt66.Value);
+		dy = (float) (SparkInt74.Value - SparkInt67.Value);
+		steps = sqrt(dx * dx + dy * dy);
+		for(float i = 0.0; i <= 1.0; i += 1.0/steps) {
+			float x = (float) SparkInt66.Value + i * dx;
+			float y = (float) SparkInt67.Value + i * dy;
+			float graph = closest(&input, x, y, colour);
+			glVertex2f(o.x + (ratio * zoom * x), o.y + (zoom * (y + graph * 100.0)));
+		}
+		glEnd();
+
+		colour = 2;
+		glBegin(GL_LINE_STRIP);
+		glColor3f(0.0, 0.0, 1.0);
+		dx = (float) (SparkInt73.Value - SparkInt66.Value);
+		dy = (float) (SparkInt74.Value - SparkInt67.Value);
+		steps = sqrt(dx * dx + dy * dy);
+		for(float i = 0.0; i <= 1.0; i += 1.0/steps) {
+			float x = (float) SparkInt66.Value + i * dx;
+			float y = (float) SparkInt67.Value + i * dy;
+			float graph = closest(&input, x, y, colour);
+			glVertex2f(o.x + (ratio * zoom * x), o.y + (zoom * (y + graph * 100.0)));
+		}
+		glEnd();
+
 		return;
 	}
 
@@ -355,6 +433,7 @@ unsigned int SparkInitialise(SparkInfoStruct sparkInfo) {
 	sparkControlTitle(SPARK_CONTROL_1, (char *) "Sampler");
 	sparkControlTitle(SPARK_CONTROL_2, (char *) "Scopes");
 	sparkControlTitle(SPARK_CONTROL_3, (char *) "Slicing");
+	dirty = 1;
 	return(SPARK_MODULE);
 }
 
