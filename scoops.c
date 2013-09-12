@@ -332,6 +332,12 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 		SparkMemBufStruct input;
 		if(!getbuf(2, &input)) return;
 
+		float dx = SparkInt73.Value - SparkInt66.Value;
+		float dy = SparkInt74.Value - SparkInt67.Value;
+		float rightx = -dy;
+		float righty = dx;
+		float len = sqrt(dx * dx + dy * dy);
+
 		for(int colour = 0; colour < 3; colour++) {
 			glBegin(GL_LINE_STRIP);
 			switch(colour) {
@@ -347,17 +353,12 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 				default:
 					break;
 			}
-			float dx = (float) (SparkInt73.Value - SparkInt66.Value);
-			float dy = (float) (SparkInt74.Value - SparkInt67.Value);
-			float rightx = dy;
-			float righty = -dx;
-			float steps = sqrt(dx * dx + dy * dy);
-			for(float i = 0.0; i <= 1.0; i += 1.0/steps) {
+			for(float i = 0.0; i <= 1.0; i += 1.0/len) {
 				float x = SparkInt66.Value + i * dx;
 				float y = SparkInt67.Value + i * dy;
 				float pix = closest(&input, x, y, colour);
-				float graphx = x;
-				float graphy = y + pix * 100.0;
+				float graphx = x + (100.0/len) * rightx * pix;
+				float graphy = y + (100.0/len) * righty * pix;
 				glVertex2f(o.x + (ratio * zoom * graphx), o.y + (zoom * graphy));
 			}
 			glEnd();
