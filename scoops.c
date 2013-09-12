@@ -20,7 +20,6 @@ typedef struct {
 } vert;
 
 static int sampling = 0;
-static int dirty = 1;
 static int nextmode = 0;
 
 unsigned long *cbPick(int v, SparkInfoStruct i);
@@ -240,25 +239,17 @@ void sample(SparkInfoStruct si, SparkMemBufStruct buf) {
 void SparkEvent(SparkModuleEvent e) {
 	switch(e) {
 		case SPARK_EVENT_CONTROL1:
-			printf("event sampler\n");
-			dirty = 1;
 			nextmode = 1;
 			sparkReprocess();
 			break;
 		case SPARK_EVENT_CONTROL2:
-			printf("event scopes\n");
-			dirty = 1;
 			nextmode = 2;
 			sparkReprocess();
 			break;
 		case SPARK_EVENT_CONTROL3:
-			printf("event slicer\n");
-			dirty = 1;
 			nextmode = 3;
 			sparkReprocess();
 			break;
-		case SPARK_EVENT_EXIT:
-			dirty = 1;
 		default:
 			break;
 	}
@@ -270,22 +261,13 @@ unsigned long *SparkProcess(SparkInfoStruct si) {
 
 	if(!getbuf(1, &result)) return(NULL);
 
-	if(!dirty) {
-		printf("process not dirty\n");
-		return(result.Buffer);
-	}
-
 	if(nextmode == 2) {
 		// Scopes mode
-		printf("process scopes\n");
 		memset(result.Buffer, 0, result.BufSize);
-		dirty = 0;
 		return(result.Buffer);
 	} else {
-		printf("process other\n");
 		if(!getbuf(2, &input)) return(NULL);
 		sparkCopyBuffer(input.Buffer, result.Buffer);
-		dirty = 0;
 		return(result.Buffer);
 	}
 }
@@ -433,7 +415,6 @@ unsigned int SparkInitialise(SparkInfoStruct sparkInfo) {
 	sparkControlTitle(SPARK_CONTROL_1, (char *) "Sampler");
 	sparkControlTitle(SPARK_CONTROL_2, (char *) "Scopes");
 	sparkControlTitle(SPARK_CONTROL_3, (char *) "Slicing");
-	dirty = 1;
 	return(SPARK_MODULE);
 }
 
