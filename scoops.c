@@ -349,12 +349,16 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 			}
 			float dx = (float) (SparkInt73.Value - SparkInt66.Value);
 			float dy = (float) (SparkInt74.Value - SparkInt67.Value);
+			float rightx = dy;
+			float righty = -dx;
 			float steps = sqrt(dx * dx + dy * dy);
 			for(float i = 0.0; i <= 1.0; i += 1.0/steps) {
-				float x = (float) SparkInt66.Value + i * dx;
-				float y = (float) SparkInt67.Value + i * dy;
-				float graph = closest(&input, x, y, colour);
-				glVertex2f(o.x + (ratio * zoom * x), o.y + (zoom * (y + graph * 100.0)));
+				float x = SparkInt66.Value + i * dx;
+				float y = SparkInt67.Value + i * dy;
+				float pix = closest(&input, x, y, colour);
+				float graphx = x;
+				float graphy = y + pix * 100.0;
+				glVertex2f(o.x + (ratio * zoom * graphx), o.y + (zoom * graphy));
 			}
 			glEnd();
 		}
