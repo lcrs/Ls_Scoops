@@ -23,6 +23,17 @@ typedef struct {
 static int sampling = 0;
 static int nextmode = 0;
 
+const char * vshadsrc = "void main() {\
+		vec4 v = gl_Vertex;\
+		v *= vec4(1920.0/2.0, 1200.0/2.0, 0.0, 1.0);\
+		v += vec4(1920.0/2.0, 1200.0/2.0, 0.0, 0.0);\
+		gl_Position = gl_ModelViewProjectionMatrix * v;\
+    	gl_FrontColor = gl_Vertex;\
+	}\
+	";
+
+GLuint prog, vshad;
+
 unsigned long *cbPick(int v, SparkInfoStruct i);
 
 float luma(colour c) {
@@ -372,38 +383,18 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 	SparkMemBufStruct input;
 	if(!getbuf(2, &input)) return;
 
-	const char * vshadsrc = "void main() {\
-    		gl_Position = ftransform();\
-	    	gl_FrontColor = gl_Position;\
-	    	gl_FrontColor.b = 1.0;\
-	    	gl_FrontColor.a = 1.0;\
-		}\
-		";
-
-	GLuint prog = glCreateProgram();
-	GLuint vshad = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vshad, 1, &vshadsrc, NULL);
-	glCompileShader(vshad);
-	glAttachShader(prog, vshad);
-
-	glLinkProgram(prog);
 	glUseProgram(prog);
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glColor3f(0.001, 0.0003, 0.0001);
-
-	// Deep breath
-	for(int j = 0; j < input.BufHeight; j++) {
+	for(int j = 0; j < input.BufHeight; j+=4) {
 		char *a = (char *) input.Buffer + input.Stride * j;
-		glVertexPointer(2, GL_HALF_FLOAT, 2, a);
-		glDrawArrays(GL_LINE_STRIP, 0, input.BufWidth);
+		glVertexPointer(3, GL_HALF_FLOAT, input.Inc * 4, a);
+		glDrawArrays(GL_LINE_STRIP, 0, input.BufWidth/4);
 	}
-
 	glDisableClientState(GL_VERTEX_ARRAY);
-	glUseProgram(0);
 	glDisable(GL_BLEND);
+	glUseProgram(0);
 }
 
 // Number of clips required
@@ -417,6 +408,13 @@ void SparkMemoryTempBuffers(void) {
 
 // Module level, not desktop
 unsigned int SparkInitialise(SparkInfoStruct sparkInfo) {
+	prog = glCreateProgram();
+	vshad = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vshad, 1, &vshadsrc, NULL);
+	glCompileShader(vshad);
+	glAttachShader(prog, vshad);
+	glLinkProgram(prog);
+
 	sparkControlTitle(SPARK_CONTROL_1, (char *) "Sampler");
 	sparkControlTitle(SPARK_CONTROL_2, (char *) "Scopes");
 	sparkControlTitle(SPARK_CONTROL_3, (char *) "Slicing");
