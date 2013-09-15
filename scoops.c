@@ -2,13 +2,14 @@
 // Does... image analysis things ^_^
 // lewis@lewissaunders.com
 
-#include "/usr/discreet/smoke_2013.2.53/sparks/spark.h"
 #include "half.h"
 
 #ifdef __APPLE__
-#include <OpenGL/gl.h>
+	#include <OpenGL/gl.h>
+	#include "/usr/discreet/smoke_2013.2.53/sparks/spark.h"
 #else
-#include <GL/gl.h>
+	#include <GL/gl.h>
+	#include "/usr/discreet/flame_2013.0.2/sparks/spark.h"
 #endif
 
 typedef struct {
