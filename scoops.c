@@ -22,17 +22,19 @@ typedef struct {
 
 static int sampling = 0;
 static int nextmode = 0;
+static GLuint prog, vshad;
+static half *ramp;
 
 const char * vshadsrc = "void main() {\
-		vec4 v = gl_Vertex;\
-		v *= vec4(1920.0/2.0, 1200.0/2.0, 0.0, 1.0);\
-		v += vec4(1920.0/2.0, 1200.0/2.0, 0.0, 0.0);\
+		vec4 v;\
+		v.y = gl_Color.g * 600.0 + 600.0;\
+		v.x = gl_Vertex.x * 0.5 + 0.5;\
+		v.z = 0.0;\
+		v.w = 1.0;\
 		gl_Position = gl_ModelViewProjectionMatrix * v;\
-    	gl_FrontColor = gl_Vertex;\
+    	gl_FrontColor = vec4(0.1, 0.06, 0.02, 1.0);\
 	}\
 	";
-
-GLuint prog, vshad;
 
 unsigned long *cbPick(int v, SparkInfoStruct i);
 
@@ -387,11 +389,14 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	for(int j = 0; j < input.BufHeight; j+=4) {
+	glEnableClientState(GL_COLOR_ARRAY);
+	for(int j = 0; j < input.BufHeight; j++) {
 		char *a = (char *) input.Buffer + input.Stride * j;
-		glVertexPointer(3, GL_HALF_FLOAT, input.Inc * 4, a);
-		glDrawArrays(GL_LINE_STRIP, 0, input.BufWidth/4);
+		glColorPointer(3, GL_HALF_FLOAT, 0, a);
+		glVertexPointer(2, GL_HALF_FLOAT, 0, ramp);
+		glDrawArrays(GL_LINE_STRIP, 0, input.BufWidth);
 	}
+	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisable(GL_BLEND);
 	glUseProgram(0);
@@ -408,6 +413,11 @@ void SparkMemoryTempBuffers(void) {
 
 // Module level, not desktop
 unsigned int SparkInitialise(SparkInfoStruct sparkInfo) {
+	ramp = (half *) calloc(1920 * 2, sizeof(half));
+	for(int i = 0; i < 1920 * 2; i++) {
+		ramp[i] = i/2;
+	}
+
 	prog = glCreateProgram();
 	vshad = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vshad, 1, &vshadsrc, NULL);
@@ -433,4 +443,5 @@ int SparkIsInputFormatSupported(SparkPixelFormat fmt) {
 
 // Stop
 void SparkUnInitialise(SparkInfoStruct sparkInfo) {
+	free(ramp);
 }
