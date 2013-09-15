@@ -372,23 +372,35 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 	SparkMemBufStruct input;
 	if(!getbuf(2, &input)) return;
 
+	const char * shadsrc =
+		"in vec4 vert;"
+		"in int gl_VertexID;"
+		"void main() {"
+    		"gl_Position = gl_Vertex;"
+    		"gl_Vertex.r = float(gl_VertexID);"
+		"}";
+
+	GLuint prog = glCreateProgram();
+	GLuint shad = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(shad, 1, &shadsrc, NULL);
+	glCompileShader(shad);
+	glAttachShader(prog, shad);
+	glLinkProgram(prog);
+	glUseProgram(prog);
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-	char *a;
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glColor3f(0.7, 0.4, 0.2);
+
+	// Deep breath
 	for(int j = 0; j < input.BufHeight; j++) {
-		a = (char *) input.Buffer + input.Stride * j;
-		glBegin(GL_LINE_STRIP);
-			half r, g, b;
-			for(int i = 0; i < input.BufWidth; i++) {
-				a += input.Inc;
-				r = SparkFloatColor39.Red;
-				g = SparkFloatColor39.Green;
-				b = SparkFloatColor39.Blue;
-				glColor3f(r, g, b);
-				glVertex2f(o.x + i * ratio * zoom, o.y + *((half *) (a + 2)) * h);
-			}
-		glEnd();
+		char *a = (char *) input.Buffer + input.Stride * j;
+		glVertexPointer(2, GL_HALF_FLOAT, 0, a);
+		glDrawArrays(GL_LINE_STRIP, 0, input.BufWidth);
 	}
+
+	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisable(GL_BLEND);
 }
 
