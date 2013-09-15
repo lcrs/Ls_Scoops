@@ -376,8 +376,7 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 		"in vec4 vert;"
 		"in int gl_VertexID;"
 		"void main() {"
-    		"gl_Position = gl_Vertex;"
-    		"gl_Vertex.r = float(gl_VertexID);"
+    		"gl_Position = gl_Vertex * vec4(1920.0, 1080.0, 1.0, 1.0);"
 		"}";
 
 	GLuint prog = glCreateProgram();
@@ -391,12 +390,12 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glColor3f(0.7, 0.4, 0.2);
+	glColor3f(0.1, 0.03, 0.01);
 
 	// Deep breath
 	for(int j = 0; j < input.BufHeight; j++) {
 		char *a = (char *) input.Buffer + input.Stride * j;
-		glVertexPointer(2, GL_HALF_FLOAT, 0, a);
+		glVertexPointer(2, GL_HALF_FLOAT, 2, a);
 		glDrawArrays(GL_LINE_STRIP, 0, input.BufWidth);
 	}
 
