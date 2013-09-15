@@ -390,12 +390,11 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 	glBlendFunc(GL_ONE, GL_ONE);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
-	for(int j = 0; j < input.BufHeight; j++) {
-		char *a = (char *) input.Buffer + input.Stride * j;
-		glColorPointer(3, GL_HALF_FLOAT, 0, a);
-		glVertexPointer(2, GL_HALF_FLOAT, 0, ramp);
-		glDrawArrays(GL_LINE_STRIP, 0, input.BufWidth);
-	}
+
+	glColorPointer(3, GL_HALF_FLOAT, 0, input.Buffer);
+	glVertexPointer(2, GL_HALF_FLOAT, 0, ramp);
+	glDrawArrays(GL_LINE_STRIP, 0, input.BufWidth * input.BufHeight);
+
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisable(GL_BLEND);
@@ -412,10 +411,13 @@ void SparkMemoryTempBuffers(void) {
 }
 
 // Module level, not desktop
-unsigned int SparkInitialise(SparkInfoStruct sparkInfo) {
-	ramp = (half *) calloc(1920 * 2, sizeof(half));
-	for(int i = 0; i < 1920 * 2; i++) {
-		ramp[i] = i/2;
+unsigned int SparkInitialise(SparkInfoStruct si) {
+	ramp = (half *) malloc(si.FrameWidth * si.FrameHeight * sizeof(half) * 2);
+	for(int i = 0; i < si.FrameHeight; i++) {
+		for(int j = 0; j < si.FrameWidth; j++) {
+			ramp[si.FrameWidth * 2 * i + j * 2] = j;
+			ramp[si.FrameWidth * 2 * i + j * 2 + 1] = i;
+		}
 	}
 
 	prog = glCreateProgram();
