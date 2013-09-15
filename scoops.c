@@ -27,8 +27,8 @@ static half *ramp;
 
 const char * vshadsrc = "void main() {\
 		vec4 v;\
-		v.y = gl_Color.g * 600.0 + 600.0;\
-		v.x = gl_Vertex.x * 0.5 + 0.5;\
+		v.y = gl_Color.g * 400.0 + 600.0;\
+		v.x = gl_Vertex.x * 0.4 + 20.0;\
 		v.z = 0.0;\
 		v.w = 1.0;\
 		gl_Position = gl_ModelViewProjectionMatrix * v;\
@@ -116,6 +116,15 @@ SparkFloatStruct SparkFloat12 = {
 };
 SparkFloatColorStruct SparkFloatColor39 = {
 	0.016, 0.010, 0.024, NULL	// RGB, callback
+};
+SparkIntStruct SparkInt41 = {
+	1,							// Initial
+	1,							// Min
+	128,						// Max
+	1,							// Increment
+	SPARK_FLAG_X,				// Flags
+	(char *) "Downres %d",		// Name
+	NULL						// Callback
 };
 SparkIntStruct SparkInt66 = {
 	0,							// Initial
@@ -385,20 +394,22 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 	SparkMemBufStruct input;
 	if(!getbuf(2, &input)) return;
 
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glColorPointer(3, GL_HALF_FLOAT, 0, input.Buffer);
+	glVertexPointer(2, GL_HALF_FLOAT, 0, ramp);
+
 	glUseProgram(prog);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-
-	glColorPointer(3, GL_HALF_FLOAT, 0, input.Buffer);
-	glVertexPointer(2, GL_HALF_FLOAT, 0, ramp);
 	glDrawArrays(GL_LINE_STRIP, 0, input.BufWidth * input.BufHeight);
+	glFlush();
+	glFinish();
+	glDisable(GL_BLEND);
+	glUseProgram(0);
 
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisable(GL_BLEND);
-	glUseProgram(0);
 }
 
 // Number of clips required
