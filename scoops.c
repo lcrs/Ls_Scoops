@@ -372,25 +372,27 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 	SparkMemBufStruct input;
 	if(!getbuf(2, &input)) return;
 
-	const char * shadsrc =
-		"in vec4 vert;"
-		"in int gl_VertexID;"
-		"void main() {"
-    		"gl_Position = gl_Vertex * vec4(1920.0, 1080.0, 1.0, 1.0);"
-		"}";
+	const char * vshadsrc = "void main() {\
+    		gl_Position = ftransform();\
+	    	gl_FrontColor = gl_Position;\
+	    	gl_FrontColor.b = 1.0;\
+	    	gl_FrontColor.a = 1.0;\
+		}\
+		";
 
 	GLuint prog = glCreateProgram();
-	GLuint shad = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(shad, 1, &shadsrc, NULL);
-	glCompileShader(shad);
-	glAttachShader(prog, shad);
+	GLuint vshad = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vshad, 1, &vshadsrc, NULL);
+	glCompileShader(vshad);
+	glAttachShader(prog, vshad);
+
 	glLinkProgram(prog);
 	glUseProgram(prog);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glColor3f(0.1, 0.03, 0.01);
+	glColor3f(0.001, 0.0003, 0.0001);
 
 	// Deep breath
 	for(int j = 0; j < input.BufHeight; j++) {
@@ -400,6 +402,7 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 	}
 
 	glDisableClientState(GL_VERTEX_ARRAY);
+	glUseProgram(0);
 	glDisable(GL_BLEND);
 }
 
