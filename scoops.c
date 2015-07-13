@@ -4,6 +4,26 @@
 #include "half.h"
 #include "/usr/discreet/presets/2016/sparks/spark.h"
 
+SparkFloatStruct SparkFloat7 = {
+	0.15,						// Value
+	-INFINITY,					// Min
+	+INFINITY,					// Max
+	0.01,						// Increment
+	0,							// Flags
+	(char *) "Intensity %f",	// Title
+	NULL						// Callback
+};
+
+SparkFloatStruct SparkFloat8 = {
+	255.0,						// Value
+	-INFINITY,					// Min
+	+INFINITY,					// Max
+	1.0,						// Increment
+	0,							// Flags
+	(char *) "Height %f",		// Title
+	NULL						// Callback
+};
+
 int getbuf(int n, SparkMemBufStruct *b) {
 	if(!sparkMemGetBuffer(n, b)) {
 		printf("Failed to get buffer %d\n", n);
@@ -33,10 +53,10 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 
 		half *frontpix = (half *) (frontbuf + y * onerow + x * onepix);
 		for(int colour = 0; colour < 3; colour++) {
-			int vert = frontpix[colour] * 255;
+			int vert = frontpix[colour] * SparkFloat8.Value;
 			if(vert > h - 1) vert = h - 1;
 			half *resultpix = (half *) (resultbuf + vert * onerow + x * onepix);
-			resultpix[colour] += 0.2;
+			resultpix[colour] += SparkFloat7.Value;
 		}
 	}
 
