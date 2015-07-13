@@ -2,23 +2,7 @@
 // lewis@lewissaunders.com
 
 #include "half.h"
-
-#ifdef __APPLE__
-	#include <OpenGL/gl.h>
-	#include "/usr/discreet/presets/2016/sparks/spark.h"
-#else
-	#include <GL/gl.h>
-	#include "/usr/discreet/flame_2013.0.2/sparks/spark.h"
-#endif
-
-typedef struct {
-	float r, g, b;
-} colour;
-
-
-float luma(colour c) {
-	return(0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b);
-}
+#include "/usr/discreet/presets/2016/sparks/spark.h"
 
 int getbuf(int n, SparkMemBufStruct *b) {
 	if(!sparkMemGetBuffer(n, b)) {
@@ -33,10 +17,10 @@ int getbuf(int n, SparkMemBufStruct *b) {
 }
 
 void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
-	char *fbuf = (char *) front->Buffer;
-	char *rbuf = (char *) result->Buffer;
-	int pixel = front->Inc;
-	int row = front->Stride;
+	char *frontbuf = (char *) front->Buffer;
+	char *resultbuf = (char *) result->Buffer;
+	int onepix = front->Inc;
+	int onerow = front->Stride;
 	int w = front->BufWidth;
 	int h = front->BufHeight;
 
@@ -47,12 +31,12 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 		int y = i / w;
 		int x = i % w;
 
-		half *f = (half *) (fbuf + y * row + x * pixel);
+		half *frontpix = (half *) (frontbuf + y * onerow + x * onepix);
 		for(int colour = 0; colour < 3; colour++) {
-			int vert = f[colour] * 255;
+			int vert = frontpix[colour] * 255;
 			if(vert > h - 1) vert = h - 1;
-			half *r = (half *) (rbuf + vert * row + x * pixel);
-			r[colour] += 0.2;
+			half *resultpix = (half *) (resultbuf + vert * onerow + x * onepix);
+			resultpix[colour] += 0.2;
 		}
 	}
 
@@ -65,7 +49,6 @@ unsigned long *SparkProcess(SparkInfoStruct si) {
 	if(!getbuf(2, &front)) return(NULL);
 
 	memset(result.Buffer, 0, result.BufSize);
-
 	sparkMpFork((void(*)())scopeThread, 3, &front, &result);
 
 	return(result.Buffer);
@@ -86,7 +69,7 @@ unsigned int SparkInitialise(SparkInfoStruct si) {
 	return(SPARK_MODULE);
 }
 
-// Bit depths yo
+// Bit depths
 int SparkIsInputFormatSupported(SparkPixelFormat fmt) {
 	switch(fmt) {
 		case SPARKBUF_RGB_48_3x16_FP:
