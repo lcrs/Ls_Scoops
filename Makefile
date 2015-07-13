@@ -41,7 +41,7 @@ endif
 ifeq ($(SPARK_OSNAME),MACOSX)
   CXX = cc
   LD = cc
-  CFLAGS = -fPIC \
+  CFLAGS = -O3 -fPIC \
     -DDL_LITTLE_ENDIAN \
     -D_DARWIN_USE_64_BIT_INODE \
     -arch x86_64 \

@@ -1,12 +1,11 @@
 // Scoops
-// Does... image analysis things ^_^
 // lewis@lewissaunders.com
 
 #include "half.h"
 
 #ifdef __APPLE__
 	#include <OpenGL/gl.h>
-	#include "/usr/discreet/smoke_2013.2.53/sparks/spark.h"
+	#include "/usr/discreet/presets/2016/sparks/spark.h"
 #else
 	#include <GL/gl.h>
 	#include "/usr/discreet/flame_2013.0.2/sparks/spark.h"
@@ -16,27 +15,6 @@ typedef struct {
 	float r, g, b;
 } colour;
 
-typedef struct {
-	float x, y;
-} vert;
-
-static int sampling = 0;
-static int nextmode = 0;
-static GLuint prog, vshad;
-static half *ramp;
-
-const char * vshadsrc = "void main() {\
-		vec4 v;\
-		v.y = gl_Color.g * 400.0 + 600.0;\
-		v.x = gl_Vertex.x * 0.4 + 20.0;\
-		v.z = 0.0;\
-		v.w = 1.0;\
-		gl_Position = gl_ModelViewProjectionMatrix * v;\
-    	gl_FrontColor = vec4(0.1, 0.06, 0.02, 1.0);\
-	}\
-	";
-
-unsigned long *cbPick(int v, SparkInfoStruct i);
 
 float luma(colour c) {
 	return(0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b);
@@ -54,362 +32,35 @@ int getbuf(int n, SparkMemBufStruct *b) {
 	return(1);
 }
 
-// UI
-SparkBooleanStruct SparkBoolean6 = {
-	0,
-	(char *) "Pick sample location...",
-	cbPick
-};
-SparkIntStruct SparkInt7 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_X,				// Flags
-	(char *) "Sample at X %d",	// Name
-	NULL						// Callback
-};
-SparkIntStruct SparkInt8 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_Y,				// Flags
-	(char *) "Sample at Y %d",	// Name
-	NULL						// Callback
-};
-SparkFloatStruct SparkFloat9 = {
-	0.0,						// Initial
-	-INFINITY,					// Min
-	+INFINITY,					// Max
-	0.001,						// Increment
-	SPARK_FLAG_NO_INPUT ,		// Flags
-	(char *) "R %f",			// Name
-	NULL						// Callback
-};
-SparkFloatStruct SparkFloat10 = {
-	0.0,						// Initial
-	-INFINITY,					// Min
-	+INFINITY,					// Max
-	0.001,						// Increment
-	SPARK_FLAG_NO_INPUT ,		// Flags
-	(char *) "G %f",			// Name
-	NULL						// Callback
-};
-SparkFloatStruct SparkFloat11 = {
-	0.0,						// Initial
-	-INFINITY,					// Min
-	+INFINITY,					// Max
-	0.001,						// Increment
-	SPARK_FLAG_NO_INPUT ,		// Flags
-	(char *) "B %f",			// Name
-	NULL						// Callback
-};
-SparkFloatStruct SparkFloat12 = {
-	0.0,						// Initial
-	-INFINITY,					// Min
-	+INFINITY,					// Max
-	0.001,						// Increment
-	SPARK_FLAG_NO_INPUT ,		// Flags
-	(char *) "Luma %f",			// Name
-	NULL						// Callback
-};
-SparkFloatColorStruct SparkFloatColor39 = {
-	0.016, 0.010, 0.024, NULL	// RGB, callback
-};
-SparkIntStruct SparkInt41 = {
-	1,							// Initial
-	1,							// Min
-	128,						// Max
-	1,							// Increment
-	SPARK_FLAG_X,				// Flags
-	(char *) "Downres %d",		// Name
-	NULL						// Callback
-};
-SparkIntStruct SparkInt66 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_X,				// Flags
-	(char *) "From X %d",		// Name
-	NULL						// Callback
-};
-SparkIntStruct SparkInt67 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_Y,				// Flags
-	(char *) "From Y %d",		// Name
-	NULL						// Callback
-};
-SparkIntStruct SparkInt73 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_X,				// Flags
-	(char *) "To X %d",			// Name
-	NULL						// Callback
-};
-SparkIntStruct SparkInt74 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_Y,				// Flags
-	(char *) "To Y %d",			// Name
-	NULL						// Callback
-};
-
-// Pick button callback
-unsigned long* cbPick(int v, SparkInfoStruct i) {
-	if(SparkBoolean6.Value == 0) {
-		// Back to normal
-		sparkViewingCursor(SPARK_CURSOR_ARROW);
-	} else {
-		// Pickin' time
-		sparkViewingCursor(SPARK_CURSOR_PICK);
-	}
-	return(NULL);
-}
-
-// Clicky draggy callback
-unsigned long* SparkInteract(SparkInfoStruct si, int sx, int sy, float pressure, float vx, float vy, float vz) {
-	if(si.Context == SPARK_MODE_CONTROL1 && SparkBoolean6.Value == 1) {
-		if(pressure > 0.0) {
-			// Pick sample point
-			sampling = 1;
-			SparkInt7.Value = vx;
-			SparkInt8.Value = vy;
-			sparkControlUpdate(7);
-			sparkControlUpdate(8);
-			SparkAnalyse(si);
-		} else {
-			if(sampling) {
-				sampling = 0;
-				SparkBoolean6.Value = 0;
-				sparkControlUpdate(6);
-				cbPick(0, si);
-				sparkChClear(1, 9);
-				sparkChClear(1, 10);
-				sparkChClear(1, 11);
-				sparkChClear(1, 12);
-				SparkAnalyse(si);
-			}
-		}
-		sparkViewingDraw();
-	}
-	if(si.Context == SPARK_MODE_CONTROL3) {
-		if(sampling) {
-			SparkInt73.Value = vx;
-			SparkInt74.Value = vy;
-			sparkControlUpdate(73);
-			sparkControlUpdate(74);
-			if(pressure == 0.0) {
-				sampling = 0;
-			}
-		} else {
-			if(pressure > 0.0) {
-				sampling = 1;
-				SparkInt66.Value = vx;
-				SparkInt67.Value = vy;
-				sparkControlUpdate(66);
-				sparkControlUpdate(67);
-				SparkInt73.Value = vx;
-				SparkInt74.Value = vy;
-				sparkControlUpdate(73);
-				sparkControlUpdate(74);
-			}
-		}
-		sparkViewingDraw();
-	}
-	return(NULL);
-}
-
-// Set keys
-void sample(SparkInfoStruct si, SparkMemBufStruct buf) {
-	colour sampled;
-
-	switch(buf.BufDepth) {
-		case SPARKBUF_RGB_48_3x16_FP:
-			char *b;
-			half *pix;
-			b = (char *) buf.Buffer;
-			b += buf.Stride * SparkInt8.Value;
-			b += buf.Inc * SparkInt7.Value;
-			pix = (half *) b;
-			sampled.r = (float) *pix;
-			sampled.g = (float) *(pix + 1);
-			sampled.b = (float) *(pix + 2);
-			break;
-		default:
-			printf("Unhandled pixel format what the hell?\n");
-			sampled = (colour) {0.0, 0.0, 0.0};
-	}
-	sparkSetCurveKey(SPARK_UI_CONTROL, 9, si.FrameNo, sampled.r);
-	sparkSetCurveKey(SPARK_UI_CONTROL, 10, si.FrameNo, sampled.g);
-	sparkSetCurveKey(SPARK_UI_CONTROL, 11, si.FrameNo, sampled.b);
-	sparkSetCurveKey(SPARK_UI_CONTROL, 12, si.FrameNo, luma(sampled));
-	sparkControlUpdate(9);
-	sparkControlUpdate(10);
-	sparkControlUpdate(11);
-	sparkControlUpdate(12);
-}
-
-// Miscellaneous events callback
-void SparkEvent(SparkModuleEvent e) {
-	switch(e) {
-		case SPARK_EVENT_CONTROL1:
-			nextmode = 1;
-			sparkReprocess();
-			break;
-		case SPARK_EVENT_CONTROL2:
-			nextmode = 2;
-			sparkReprocess();
-			break;
-		case SPARK_EVENT_CONTROL3:
-			nextmode = 3;
-			sparkReprocess();
-			break;
-		default:
-			break;
-	}
-}
-
-// Work
 unsigned long *SparkProcess(SparkInfoStruct si) {
-	SparkMemBufStruct result, input;
+	SparkMemBufStruct result, front;
 
 	if(!getbuf(1, &result)) return(NULL);
+	if(!getbuf(2, &front)) return(NULL);
 
-	if(nextmode == 2) {
-		// Scopes mode
-		memset(result.Buffer, 0, result.BufSize);
-		return(result.Buffer);
-	} else {
-		if(!getbuf(2, &input)) return(NULL);
-		sparkCopyBuffer(input.Buffer, result.Buffer);
-		return(result.Buffer);
-	}
-}
+	memset(result.Buffer, 0, result.BufSize);
 
-// More work
-unsigned long *SparkAnalyse(SparkInfoStruct si) {
-	SparkMemBufStruct input;
+	int row = result.Stride;
+	int pixel = result.Inc;
+	int w = si.FrameWidth;
+	int h = si.FrameHeight;
+	char *fbuf = (char *) front.Buffer;
+	char *rbuf = (char *) result.Buffer;
+	half *f, *r;
 
-	if(!getbuf(2, &input)) return(NULL);
-	sample(si, input);
-	return(NULL);
-}
-
-// Return closest pixel value from buffer
-half closest(SparkMemBufStruct *in, float x, float y, int colour) {
-	if(x > in->BufWidth || y > in->BufHeight) return(0.0);
-	if(x < 0 || y < 0) return(0.0);
-
-	char *b = (char *) in->Buffer;
-	b += in->Stride * (int) y + in->Inc * (int) x + colour * sizeof(half);
-
-	if((b > (char *) in->Buffer + in->BufSize) || (b < (char *) in->Buffer)) {
-		// Safety!
-		return(0.0);
-	}
-	return(*((half *) b));
-}
-
-// Further working
-void SparkOverlay(SparkInfoStruct si, float zoom) {
-	float ratio = sparkGetViewerRatio();
-
-	if(zoom < 1.0) {
-	    zoom = 1.0 / (2.0 - zoom);
-	}
-
-	float w = si.FrameWidth * ratio * zoom;
-	float h = si.FrameHeight * zoom;
-	vert o = {si.FrameBufferX, si.FrameBufferY};
-	vert p = {o.x + w, o.y + h};
-
-	if(si.Context == SPARK_MODE_CONTROL1) {
-		// Sampler
-		glBegin(GL_LINE_LOOP);
-		glColor3f(1.0, 0.0, 0.0);
-		glVertex2f(o.x + (ratio * zoom * (float)SparkInt7.Value - 10.0), o.y + (zoom * (float)SparkInt8.Value) - 10.0);
-		glVertex2f(o.x + (ratio * zoom * (float)SparkInt7.Value + 10.0), o.y + (zoom * (float)SparkInt8.Value) - 10.0);
-		glVertex2f(o.x + (ratio * zoom * (float)SparkInt7.Value + 10.0), o.y + (zoom * (float)SparkInt8.Value) + 10.0);
-		glVertex2f(o.x + (ratio * zoom * (float)SparkInt7.Value - 10.0), o.y + (zoom * (float)SparkInt8.Value) + 10.0);
-		glEnd();
-		return;
-	}
-	if(si.Context == SPARK_MODE_CONTROL3) {
-		// Slicer
-		glBegin(GL_LINES);
-		glColor3f(1.0, 1.0, 1.0);
-		glVertex2f(o.x + (ratio * zoom * (float)SparkInt66.Value), o.y + (zoom * (float)SparkInt67.Value));
-		glVertex2f(o.x + (ratio * zoom * (float)SparkInt73.Value), o.y + (zoom * (float)SparkInt74.Value));
-		glEnd();
-
-		// Now the hard messy bit...
-		SparkMemBufStruct input;
-		if(!getbuf(2, &input)) return;
-
-		float dx = SparkInt73.Value - SparkInt66.Value;
-		float dy = SparkInt74.Value - SparkInt67.Value;
-		float rightx = -dy;
-		float righty = dx;
-		float len = sqrt(dx * dx + dy * dy);
-
-		for(int colour = 0; colour < 3; colour++) {
-			glBegin(GL_LINE_STRIP);
-			switch(colour) {
-				case 0:
-					glColor3f(1.0, 0.0, 0.0);
-					break;
-				case 1:
-					glColor3f(0.0, 1.0, 0.0);
-					break;
-				case 2:
-					glColor3f(0.0, 0.0, 1.0);
-					break;
-				default:
-					break;
+	for(int y = 0; y < h - 1; y+=2) {
+		for(int x = 0; x < w - 1; x+=2) {
+			f = (half *) (fbuf + y * row + x * pixel);
+			for(int c = 0; c < 3; c++) {
+				int v = f[c] * (h - 1);
+				if(v > h - 1) v = h - 1;
+				r = (half *) (rbuf + v * row + x * pixel);
+				r[c] += 0.1;
 			}
-			for(float i = 0.0; i <= 1.0; i += 1.0/len) {
-				float x = SparkInt66.Value + i * dx;
-				float y = SparkInt67.Value + i * dy;
-				float pix = closest(&input, x, y, colour);
-				float graphx = x + (100.0/len) * rightx * pix;
-				float graphy = y + (100.0/len) * righty * pix;
-				glVertex2f(o.x + (ratio * zoom * graphx), o.y + (zoom * graphy));
-			}
-			glEnd();
 		}
-
-		return;
 	}
-
-	// Scopes
-	SparkMemBufStruct input;
-	if(!getbuf(2, &input)) return;
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glColorPointer(3, GL_HALF_FLOAT, 0, input.Buffer);
-	glVertexPointer(2, GL_HALF_FLOAT, 0, ramp);
-
-	glUseProgram(prog);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
-	glDrawArrays(GL_LINE_STRIP, 0, input.BufWidth * input.BufHeight);
-	glFlush();
-	glFinish();
-	glDisable(GL_BLEND);
-	glUseProgram(0);
-
-	glDisableClientState(GL_COLOR_ARRAY);
-	glDisableClientState(GL_VERTEX_ARRAY);
+	
+	return(result.Buffer);
 }
 
 // Number of clips required
@@ -423,24 +74,7 @@ void SparkMemoryTempBuffers(void) {
 
 // Module level, not desktop
 unsigned int SparkInitialise(SparkInfoStruct si) {
-	ramp = (half *) malloc(si.FrameWidth * si.FrameHeight * sizeof(half) * 2);
-	for(int i = 0; i < si.FrameHeight; i++) {
-		for(int j = 0; j < si.FrameWidth; j++) {
-			ramp[si.FrameWidth * 2 * i + j * 2] = j;
-			ramp[si.FrameWidth * 2 * i + j * 2 + 1] = i;
-		}
-	}
-
-	prog = glCreateProgram();
-	vshad = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vshad, 1, &vshadsrc, NULL);
-	glCompileShader(vshad);
-	glAttachShader(prog, vshad);
-	glLinkProgram(prog);
-
-	sparkControlTitle(SPARK_CONTROL_1, (char *) "Sampler");
-	sparkControlTitle(SPARK_CONTROL_2, (char *) "Scopes");
-	sparkControlTitle(SPARK_CONTROL_3, (char *) "Slicing");
+	sparkControlTitle(SPARK_CONTROL_1, (char *) "Scopes");
 	return(SPARK_MODULE);
 }
 
@@ -456,5 +90,4 @@ int SparkIsInputFormatSupported(SparkPixelFormat fmt) {
 
 // Stop
 void SparkUnInitialise(SparkInfoStruct sparkInfo) {
-	free(ramp);
 }
