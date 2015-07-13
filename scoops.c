@@ -32,6 +32,32 @@ int getbuf(int n, SparkMemBufStruct *b) {
 	return(1);
 }
 
+void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
+	char *fbuf = (char *) front->Buffer;
+	char *rbuf = (char *) result->Buffer;
+	int pixel = front->Inc;
+	int row = front->Stride;
+	int w = front->BufWidth;
+	int h = front->BufHeight;
+
+	unsigned long offset, pixels;
+	sparkMpInfo(&offset, &pixels);
+	
+	for(int i = offset; i < offset + pixels; i++) {
+		int y = i / w;
+		int x = i % w;
+
+		half *f = (half *) (fbuf + y * row + x * pixel);
+		for(int colour = 0; colour < 3; colour++) {
+			int vert = f[colour] * 255;
+			if(vert > h - 1) vert = h - 1;
+			half *r = (half *) (rbuf + vert * row + x * pixel);
+			r[colour] += 0.2;
+		}
+	}
+
+}
+
 unsigned long *SparkProcess(SparkInfoStruct si) {
 	SparkMemBufStruct result, front;
 
@@ -40,26 +66,8 @@ unsigned long *SparkProcess(SparkInfoStruct si) {
 
 	memset(result.Buffer, 0, result.BufSize);
 
-	int row = result.Stride;
-	int pixel = result.Inc;
-	int w = si.FrameWidth;
-	int h = si.FrameHeight;
-	char *fbuf = (char *) front.Buffer;
-	char *rbuf = (char *) result.Buffer;
-	half *f, *r;
+	sparkMpFork((void(*)())scopeThread, 3, &front, &result);
 
-	for(int y = 0; y < h - 1; y+=2) {
-		for(int x = 0; x < w - 1; x+=2) {
-			f = (half *) (fbuf + y * row + x * pixel);
-			for(int c = 0; c < 3; c++) {
-				int v = f[c] * (h - 1);
-				if(v > h - 1) v = h - 1;
-				r = (half *) (rbuf + v * row + x * pixel);
-				r[c] += 0.1;
-			}
-		}
-	}
-	
 	return(result.Buffer);
 }
 
