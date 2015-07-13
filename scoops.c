@@ -4,26 +4,29 @@
 #include "half.h"
 #include "/usr/discreet/presets/2016/sparks/spark.h"
 
+unsigned long *scopeUICallback(int n, SparkInfoStruct si);
+
 SparkFloatStruct SparkFloat7 = {
 	0.15,						// Value
 	-INFINITY,					// Min
 	+INFINITY,					// Max
-	0.01,						// Increment
+	0.002,						// Increment
 	0,							// Flags
 	(char *) "Intensity %f",	// Title
-	NULL						// Callback
+	scopeUICallback				// Callback
 };
 
 SparkFloatStruct SparkFloat8 = {
 	255.0,						// Value
-	-INFINITY,					// Min
+	0,							// Min
 	+INFINITY,					// Max
 	1.0,						// Increment
 	0,							// Flags
 	(char *) "Height %f",		// Title
-	NULL						// Callback
+	scopeUICallback				// Callback
 };
 
+// Check a buffer
 int getbuf(int n, SparkMemBufStruct *b) {
 	if(!sparkMemGetBuffer(n, b)) {
 		printf("Failed to get buffer %d\n", n);
@@ -36,6 +39,7 @@ int getbuf(int n, SparkMemBufStruct *b) {
 	return(1);
 }
 
+// Process one slice of the input, run multiple times by sparkMpFork() below
 void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 	char *frontbuf = (char *) front->Buffer;
 	char *resultbuf = (char *) result->Buffer;
@@ -62,6 +66,7 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 
 }
 
+// Per-frame work
 unsigned long *SparkProcess(SparkInfoStruct si) {
 	SparkMemBufStruct result, front;
 
@@ -72,6 +77,13 @@ unsigned long *SparkProcess(SparkInfoStruct si) {
 	sparkMpFork((void(*)())scopeThread, 3, &front, &result);
 
 	return(result.Buffer);
+}
+
+// UI click-drag callback
+unsigned long *scopeUICallback(int n, SparkInfoStruct si) {
+	unsigned long *r = SparkProcess(si);
+	sparkViewingDraw();
+	return(r);
 }
 
 // Number of clips required
