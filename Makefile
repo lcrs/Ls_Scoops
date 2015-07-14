@@ -120,7 +120,7 @@ SPARK_CFILES =
 # emulation) as defined in the openexr distribution which you can obtain
 # from http://openexr.com.
 #
-SPARK_C++FILES = scoops.c
+SPARK_C++FILES = Ls_Scoops.c
  
 #
 # Please don't touch these four lines
