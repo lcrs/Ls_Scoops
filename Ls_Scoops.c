@@ -17,7 +17,7 @@ SparkPupStruct SparkPup6 = {
 };
 
 SparkFloatStruct SparkFloat7 = {
-	0.15,						// Value
+	0.03,						// Value
 	-INFINITY,					// Min
 	+INFINITY,					// Max
 	0.002,						// Increment
@@ -35,8 +35,6 @@ SparkFloatStruct SparkFloat8 = {
 	(char *) "Height %.2f",		// Title
 	scopeUICallback				// Callback
 };
-
-
 
 // Check a buffer
 int getbuf(int n, SparkMemBufStruct *b) {
@@ -154,6 +152,47 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 		}
 	}
 
+	// Vectorscope
+	if(SparkPup6.Value == 0 || SparkPup6.Value == 2) {
+		float xscale, yscale, x0, y0;
+		if(SparkPup6.Value == 0) {
+			// 4-up
+			xscale = 0.5;
+			yscale = 0.5;
+			x0 = 0.5;
+			y0 = 0.0;
+		} else {
+			// Vectorscope
+			xscale = 1.0;
+			yscale = 1.0;
+			x0 = 0.0;
+			y0 = 0.0;
+		}
+		int maxvert = yscale * (h - 1);
+		int minvert = y0;
+
+		for(int i = offset; i < offset + pixels; i++) {
+			int y = i / w;
+			int x = i % w;
+
+			half *frontpix = (half *) (frontbuf + y * onerow + x * onepix);
+			half r = frontpix[0];
+			half g = frontpix[1];
+			half b = frontpix[2];
+
+			float vx = 0.5 + 0.5*(g-b);
+			float vy = 0.5 + 0.5*(g-r);
+
+			char *o = resultbuf;
+			o += (int)(((y0 * h) + (vy * yscale * h))) * onerow;
+			o += (int)(((x0 * w) + (vx * xscale * w))) * onepix;
+
+			half *resultpix = (half *) o;
+			resultpix[0] += SparkFloat7.Value * r;
+			resultpix[1] += SparkFloat7.Value * g;
+			resultpix[2] += SparkFloat7.Value * b;
+		}
+	}
 }
 
 // Per-frame work
