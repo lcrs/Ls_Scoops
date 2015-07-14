@@ -180,12 +180,20 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 			half g = frontpix[1];
 			half b = frontpix[2];
 
-			float vx = 0.5 + 0.5*(g-b);
-			float vy = 0.5 + 0.5*(g-r);
+			float yy =  0.299 * r + 0.587 * g + 0.114  * b;
+			float cb = -0.169 * r - 0.331 * g + 0.499  * b;
+			float cr =  0.499 * r - 0.418 * g - 0.0813 * b;
+			cb *= -1;
+			cb += 0.5;
+			cr += 0.5;
+			if(cb > 1.0) cb = 1.0;
+			if(cb < 0.0) cb = 0.0;
+			if(cr > 1.0) cr = 1.0;
+			if(cr < 0.0) cr = 0.0;
 
 			char *o = resultbuf;
-			o += (int)(((y0 * h) + (vy * yscale * h))) * onerow;
-			o += (int)(((x0 * w) + (vx * xscale * w))) * onepix;
+			o += (int)(((y0 * h) + (cb * yscale * h))) * onerow;
+			o += (int)(((x0 * w) + (cr * xscale * w))) * onepix;
 
 			half *resultpix = (half *) o;
 			resultpix[0] += SparkFloat7.Value * r;
