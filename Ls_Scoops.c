@@ -12,7 +12,7 @@ SparkFloatStruct SparkFloat7 = {
 	+INFINITY,					// Max
 	0.002,						// Increment
 	0,							// Flags
-	(char *) "Intensity %f",	// Title
+	(char *) "Intensity %.4f",	// Title
 	scopeUICallback				// Callback
 };
 
@@ -22,7 +22,7 @@ SparkFloatStruct SparkFloat8 = {
 	+INFINITY,					// Max
 	1.0,						// Increment
 	0,							// Flags
-	(char *) "Height %f",		// Title
+	(char *) "Height %.2f",		// Title
 	scopeUICallback				// Callback
 };
 
