@@ -6,6 +6,16 @@
 
 unsigned long *scopeUICallback(int n, SparkInfoStruct si);
 
+SparkPupStruct SparkPup6 = {
+	0,							// Value
+	4,							// Count
+	scopeUICallback,			// Callback
+	{"4-up",					// Titles
+	 "Waveform",
+	 "Vectorscope",
+	 "RGB Parade"}
+};
+
 SparkFloatStruct SparkFloat7 = {
 	0.15,						// Value
 	-INFINITY,					// Min
@@ -17,14 +27,16 @@ SparkFloatStruct SparkFloat7 = {
 };
 
 SparkFloatStruct SparkFloat8 = {
-	255.0,						// Value
-	0,							// Min
+	1.0,						// Value
+	0.0,						// Min
 	+INFINITY,					// Max
-	1.0,						// Increment
+	0.01,						// Increment
 	0,							// Flags
 	(char *) "Height %.2f",		// Title
 	scopeUICallback				// Callback
 };
+
+
 
 // Check a buffer
 int getbuf(int n, SparkMemBufStruct *b) {
@@ -50,17 +62,95 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 
 	unsigned long offset, pixels;
 	sparkMpInfo(&offset, &pixels);
-	
-	for(int i = offset; i < offset + pixels; i++) {
-		int y = i / w;
-		int x = i % w;
 
-		half *frontpix = (half *) (frontbuf + y * onerow + x * onepix);
-		for(int colour = 0; colour < 3; colour++) {
-			int vert = frontpix[colour] * SparkFloat8.Value;
-			if(vert > h - 1) vert = h - 1;
-			half *resultpix = (half *) (resultbuf + vert * onerow + x * onepix);
-			resultpix[colour] += SparkFloat7.Value;
+	// Image window
+	if(SparkPup6.Value == 0) {
+		float xscale, yscale, x0, y0;
+		// 4-up
+		xscale = 0.5;
+		yscale = 0.5;
+		x0 = 0.0;
+		y0 = 0.0;
+
+		for(int i = offset; i < offset + pixels; i++) {
+			int y = i / w;
+			int x = i % w;
+
+			half *frontpix = (half *) (frontbuf + y * onerow + x * onepix);
+			half *resultpix = (half *) (resultbuf + (int)(y0 * h) * onerow + (int)(y * yscale) * onerow + (int)(x0 * w) * onepix + (int)(x * xscale) * onepix);
+
+			memcpy(resultpix, frontpix, 3 * sizeof(half));
+		}
+	}
+
+	// Waveform
+	if(SparkPup6.Value == 0 || SparkPup6.Value == 1) {
+		float xscale, yscale, x0, y0;
+		if(SparkPup6.Value == 0) {
+			// 4-up
+			xscale = 0.5;
+			yscale = 0.5;
+			x0 = 0.0;
+			y0 = 0.5;
+		} else {
+			// Waveform
+			xscale = 1.0;
+			yscale = 1.0;
+			x0 = 0.0;
+			y0 = 0.0;
+		}
+		int maxvert = yscale * (h - 1);
+		int minvert = y0;
+
+		for(int i = offset; i < offset + pixels; i++) {
+			int y = i / w;
+			int x = i % w;
+
+			half *frontpix = (half *) (frontbuf + y * onerow + x * onepix);
+
+			for(int colour = 0; colour < 3; colour++) {
+				int vert = frontpix[colour] * SparkFloat8.Value * yscale * h;
+				if(vert > maxvert) vert = maxvert;
+				if(vert < minvert) vert = minvert;
+				half *resultpix = (half *) (resultbuf + (int)(y0 * h) * onerow + vert * onerow + (int)(x0 * w) * onepix + (int)(x * xscale) * onepix);
+				resultpix[colour] += SparkFloat7.Value;
+			}
+		}
+	}
+
+
+	// RGB Parade
+	if(SparkPup6.Value == 0 || SparkPup6.Value == 3) {
+		float xscale, yscale, x0, y0;
+		if(SparkPup6.Value == 0) {
+			// 4-up
+			xscale = 0.5;
+			yscale = 0.5;
+			x0 = 0.5;
+			y0 = 0.5;
+		} else {
+			// RGB Parade
+			xscale = 1.0;
+			yscale = 1.0;
+			x0 = 0.0;
+			y0 = 0.0;
+		}
+		int maxvert = yscale * (h - 1);
+		int minvert = y0;
+
+		for(int i = offset; i < offset + pixels; i++) {
+			int y = i / w;
+			int x = i % w;
+
+			half *frontpix = (half *) (frontbuf + y * onerow + x * onepix);
+
+			for(int colour = 0; colour < 3; colour++) {
+				int vert = frontpix[colour] * SparkFloat8.Value * yscale * h;
+				if(vert > maxvert) vert = maxvert;
+				if(vert < minvert) vert = minvert;
+				half *resultpix = (half *) (resultbuf + (int)(y0 * h) * onerow + vert * onerow + (int)((x0 * w) + ((colour/3.0) * xscale * w)) * onepix + (int)(x * xscale * (1.0/3.0)) * onepix);
+				resultpix[colour] += SparkFloat7.Value;
+			}
 		}
 	}
 
@@ -97,7 +187,7 @@ void SparkMemoryTempBuffers(void) {
 
 // Module level, not desktop
 unsigned int SparkInitialise(SparkInfoStruct si) {
-	sparkControlTitle(SPARK_CONTROL_1, (char *) "Scopes");
+	sparkControlTitle(SPARK_CONTROL_1, (char *) "CPU Scopes");
 	return(SPARK_MODULE);
 }
 
