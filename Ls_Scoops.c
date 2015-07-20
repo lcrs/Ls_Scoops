@@ -157,7 +157,7 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 				int vert = frontpix[colour] * SparkFloat8.Value * yscale * h;
 				if(vert > maxvert) vert = maxvert;
 				if(vert < minvert) vert = minvert;
-				half *resultpix = (half *) (resultbuf + (int)(y0 * h) * onerow + vert * onerow + (int)((x0 * w) + ((colour/3.0) * xscale * w)) * onepix + (int)(x * xscale * (1.0/3.0)) * onepix);
+				half *resultpix = (half *) (resultbuf + (int)(y0 * h) * onerow + vert * onerow + (int)((x0 * w) + ((colour/2.85) * xscale * w)) * onepix + (int)(x * xscale * (1.0/3.3)) * onepix);
 				resultpix[colour] += SparkFloat7.Value;
 			}
 		}
