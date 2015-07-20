@@ -57,6 +57,7 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 	int onerow = front->Stride;
 	int w = front->BufWidth;
 	int h = front->BufHeight;
+	float aspect = (float)w/(float)h;
 
 	unsigned long offset, pixels;
 	sparkMpInfo(&offset, &pixels);
@@ -86,10 +87,11 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 		float xscale, yscale, x0, y0;
 		if(SparkPup6.Value == 0) {
 			// 4-up
-			xscale = 0.5;
-			yscale = 0.5;
-			x0 = 0.0;
-			y0 = 0.5;
+			float border = 0.01;
+			xscale = 0.5 - 2.0 * border;
+			yscale = 0.5 - 2.0 * border * aspect;
+			x0 = 0.0 + border;
+			y0 = 0.5 + border * aspect;
 		} else {
 			// Waveform
 			xscale = 1.0;
@@ -115,7 +117,6 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 			}
 		}
 	}
-
 
 	// RGB Parade
 	if(SparkPup6.Value == 0 || SparkPup6.Value == 3) {
@@ -168,8 +169,6 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 			x0 = 0.0;
 			y0 = 0.0;
 		}
-		int maxvert = yscale * (h - 1);
-		int minvert = y0;
 
 		for(int i = offset; i < offset + pixels; i++) {
 			int y = i / w;
@@ -183,14 +182,15 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 			float yy =  0.299 * r + 0.587 * g + 0.114  * b;
 			float cb = -0.169 * r - 0.331 * g + 0.499  * b;
 			float cr =  0.499 * r - 0.418 * g - 0.0813 * b;
-			cb *= -1;
-			cb += 0.5;
 			cr *= (float)h/(float)w;
+			if(cb >  0.5) cb =  0.5;
+			if(cb < -0.5) cb = -0.5;
+			if(cr >  0.5) cr =  0.5;
+			if(cr < -0.5) cr = -0.5;
+			cb *= -0.95;
+			cr *= 0.95;
+			cb += 0.5;
 			cr += 0.5;
-			if(cb > 1.0) cb = 1.0;
-			if(cb < 0.0) cb = 0.0;
-			if(cr > 1.0) cr = 1.0;
-			if(cr < 0.0) cr = 0.0;
 
 			char *o = resultbuf;
 			o += (int)(((y0 * h) + (cb * yscale * h))) * onerow;
