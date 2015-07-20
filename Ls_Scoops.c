@@ -36,6 +36,16 @@ SparkFloatStruct SparkFloat8 = {
 	scopeUICallback				// Callback
 };
 
+SparkFloatStruct SparkFloat9 = {
+	2.0,						// Value
+	0.0,						// Min
+	+INFINITY,					// Max
+	0.01,						// Increment
+	0,							// Flags
+	(char *) "Borders %.2f",		// Title
+	scopeUICallback				// Callback
+};
+
 // Check a buffer
 int getbuf(int n, SparkMemBufStruct *b) {
 	if(!sparkMemGetBuffer(n, b)) {
@@ -58,6 +68,7 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 	int w = front->BufWidth;
 	int h = front->BufHeight;
 	float aspect = (float)w/(float)h;
+	float border = SparkFloat9.Value / 100.0;
 
 	unsigned long offset, pixels;
 	sparkMpInfo(&offset, &pixels);
@@ -87,17 +98,16 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 		float xscale, yscale, x0, y0;
 		if(SparkPup6.Value == 0) {
 			// 4-up
-			float border = 0.01;
 			xscale = 0.5 - 2.0 * border;
 			yscale = 0.5 - 2.0 * border * aspect;
 			x0 = 0.0 + border;
 			y0 = 0.5 + border * aspect;
 		} else {
 			// Waveform
-			xscale = 1.0;
-			yscale = 1.0;
-			x0 = 0.0;
-			y0 = 0.0;
+			xscale = 1.0 - 2.0 * border;
+			yscale = 1.0 - 2.0 * border * aspect;
+			x0 = 0.0 + border;
+			y0 = 0.0 + border * aspect;
 		}
 		int maxvert = yscale * (h - 1);
 		int minvert = y0;
@@ -123,16 +133,16 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 		float xscale, yscale, x0, y0;
 		if(SparkPup6.Value == 0) {
 			// 4-up
-			xscale = 0.5;
-			yscale = 0.5;
-			x0 = 0.5;
-			y0 = 0.5;
+			xscale = 0.5 - 2.0 * border;
+			yscale = 0.5 - 2.0 * border * aspect;
+			x0 = 0.5 + border;
+			y0 = 0.5 + border * aspect;
 		} else {
 			// RGB Parade
-			xscale = 1.0;
-			yscale = 1.0;
-			x0 = 0.0;
-			y0 = 0.0;
+			xscale = 1.0 - 2.0 * border;
+			yscale = 1.0 - 2.0 * border * aspect;
+			x0 = 0.0 + border;
+			y0 = 0.0 + border * aspect;
 		}
 		int maxvert = yscale * (h - 1);
 		int minvert = y0;
@@ -158,16 +168,16 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 		float xscale, yscale, x0, y0;
 		if(SparkPup6.Value == 0) {
 			// 4-up
-			xscale = 0.5;
-			yscale = 0.5;
-			x0 = 0.5;
-			y0 = 0.0;
+			xscale = 0.5 - 2.0 * border;
+			yscale = 0.5 - 2.0 * border * aspect;
+			x0 = 0.5 + border * aspect;
+			y0 = 0.0 + border * aspect;
 		} else {
 			// Vectorscope
-			xscale = 1.0;
-			yscale = 1.0;
-			x0 = 0.0;
-			y0 = 0.0;
+			xscale = 1.0 - 2.0 * border;
+			yscale = 1.0 - 2.0 * border * aspect;
+			x0 = 0.0 + border * aspect;
+			y0 = 0.0 + border * aspect;
 		}
 
 		for(int i = offset; i < offset + pixels; i++) {
