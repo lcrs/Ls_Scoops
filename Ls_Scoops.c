@@ -111,7 +111,7 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 		if(SparkPup6.Value == 0) {
 			// 4-up
 			xscale = quad1 - 2.0 * border;
-			yscale = quad1 - 2.0 * border * aspect;
+			yscale = quad2 - 2.0 * border * aspect;
 			x0 = 0.0 + border;
 			y0 = quad1 + border * aspect;
 		} else {
@@ -146,9 +146,9 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 		if(SparkPup6.Value == 0) {
 			// 4-up
 			xscale = quad2 - 2.0 * border;
-			yscale = quad2 - 2.0 * border * aspect;
+			yscale = quad1 - 2.0 * border * aspect;
 			x0 = quad1 + border;
-			y0 = quad1 + border * aspect;
+			y0 = 0.0 + border * aspect;
 		} else {
 			// RGB Parade
 			xscale = 1.0 - 2.0 * border;
@@ -183,7 +183,7 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 			xscale = quad2 - 2.0 * border;
 			yscale = quad2 - 2.0 * border * aspect;
 			x0 = quad1 + border * aspect;
-			y0 = 0.0 + border * aspect;
+			y0 = quad1 + border * aspect;
 		} else {
 			// Vectorscope
 			xscale = 1.0 - 2.0 * border;
