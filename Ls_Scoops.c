@@ -46,6 +46,16 @@ SparkFloatStruct SparkFloat9 = {
 	scopeUICallback				// Callback
 };
 
+SparkFloatStruct SparkFloat10 = {
+	0.5,						// Value
+	0.01,						// Min
+	0.99,						// Max
+	0.01,						// Increment
+	0,							// Flags
+	(char *) "Quadness %.2f",	// Title
+	scopeUICallback				// Callback
+};
+
 // Check a buffer
 int getbuf(int n, SparkMemBufStruct *b) {
 	if(!sparkMemGetBuffer(n, b)) {
@@ -69,6 +79,8 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 	int h = front->BufHeight;
 	float aspect = (float)w/(float)h;
 	float border = SparkFloat9.Value / 100.0;
+	float quad1 = SparkFloat10.Value;
+	float quad2 = 1.0 - SparkFloat10.Value;
 
 	unsigned long offset, pixels;
 	sparkMpInfo(&offset, &pixels);
@@ -77,8 +89,8 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 	if(SparkPup6.Value == 0) {
 		float xscale, yscale, x0, y0;
 		// 4-up
-		xscale = 0.5;
-		yscale = 0.5;
+		xscale = quad1;
+		yscale = quad1;
 		x0 = 0.0;
 		y0 = 0.0;
 
@@ -98,10 +110,10 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 		float xscale, yscale, x0, y0;
 		if(SparkPup6.Value == 0) {
 			// 4-up
-			xscale = 0.5 - 2.0 * border;
-			yscale = 0.5 - 2.0 * border * aspect;
+			xscale = quad1 - 2.0 * border;
+			yscale = quad1 - 2.0 * border * aspect;
 			x0 = 0.0 + border;
-			y0 = 0.5 + border * aspect;
+			y0 = quad1 + border * aspect;
 		} else {
 			// Waveform
 			xscale = 1.0 - 2.0 * border;
@@ -133,10 +145,10 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 		float xscale, yscale, x0, y0;
 		if(SparkPup6.Value == 0) {
 			// 4-up
-			xscale = 0.5 - 2.0 * border;
-			yscale = 0.5 - 2.0 * border * aspect;
-			x0 = 0.5 + border;
-			y0 = 0.5 + border * aspect;
+			xscale = quad2 - 2.0 * border;
+			yscale = quad2 - 2.0 * border * aspect;
+			x0 = quad1 + border;
+			y0 = quad1 + border * aspect;
 		} else {
 			// RGB Parade
 			xscale = 1.0 - 2.0 * border;
@@ -168,9 +180,9 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 		float xscale, yscale, x0, y0;
 		if(SparkPup6.Value == 0) {
 			// 4-up
-			xscale = 0.5 - 2.0 * border;
-			yscale = 0.5 - 2.0 * border * aspect;
-			x0 = 0.5 + border * aspect;
+			xscale = quad2 - 2.0 * border;
+			yscale = quad2 - 2.0 * border * aspect;
+			x0 = quad1 + border * aspect;
 			y0 = 0.0 + border * aspect;
 		} else {
 			// Vectorscope
