@@ -524,11 +524,14 @@ unsigned long *SparkProcess(SparkInfoStruct si) {
 
 // Sample per frame when Analyze clicked
 unsigned long *SparkAnalyse(SparkInfoStruct si) {
-	SparkMemBufStruct input;
-
+	SparkMemBufStruct result, input;
+	if(!getbuf(1, &result)) return(NULL);
 	if(!getbuf(2, &input)) return(NULL);
+	
 	sample(si, input);
-	return(NULL);
+
+	sparkCopyBuffer(input.Buffer, result.Buffer);
+	return(result.Buffer);
 }
 
 // Return closest pixel value from buffer
