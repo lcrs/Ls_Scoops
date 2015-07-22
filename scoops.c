@@ -19,10 +19,10 @@ typedef struct {
 	float x, y;
 } vert;
 
-static int sampling = 0;
-static int nextmode = 0;
-static GLuint prog, vshad;
-static half *ramp;
+int sampling = 0;
+int nextmode = 1;
+GLuint prog, vshad;
+half *ramp;
 const char * vshadsrc = "void main() {\
 		vec4 v;\
 		v.y = gl_Color.g * 400.0 + 600.0;\
@@ -311,6 +311,170 @@ void sample(SparkInfoStruct si, SparkMemBufStruct buf) {
 	sparkControlUpdate(70);
 }
 
+// Process one slice of the input, run multiple times by sparkMpFork() below
+void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
+	char *frontbuf = (char *) front->Buffer;
+	char *resultbuf = (char *) result->Buffer;
+	int onepix = front->Inc;
+	int onerow = front->Stride;
+	int w = front->BufWidth;
+	int h = front->BufHeight;
+	float aspect = (float)w/(float)h;
+	float border = SparkFloat9.Value / 100.0;
+	float quad1 = SparkFloat10.Value;
+	float quad2 = 1.0 - SparkFloat10.Value;
+	if(quad2 < border + 0.01) {
+		quad2 = border + 0.01;
+		quad1 = 1.0 - quad2;
+	} else if(quad1 < border + 0.01) {
+		quad1 = border + 0.01;
+		quad2 = 1.0 - quad1;
+	}
+
+	unsigned long offset, pixels;
+	sparkMpInfo(&offset, &pixels);
+
+	// Image window
+	if(SparkPup6.Value == 0) {
+		float xscale, yscale, x0, y0;
+		// 4-up
+		xscale = quad1;
+		yscale = quad1;
+		x0 = 0.0;
+		y0 = 0.0;
+
+		for(int i = offset; i < offset + pixels; i++) {
+			int y = i / w;
+			int x = i % w;
+
+			half *frontpix = (half *) (frontbuf + y * onerow + x * onepix);
+			half *resultpix = (half *) (resultbuf + (int)(y0 * h) * onerow + (int)(y * yscale) * onerow + (int)(x0 * w) * onepix + (int)(x * xscale) * onepix);
+
+			memcpy(resultpix, frontpix, 3 * sizeof(half));
+		}
+	}
+
+	// Waveform
+	if(SparkPup6.Value == 0 || SparkPup6.Value == 1) {
+		float xscale, yscale, x0, y0;
+		if(SparkPup6.Value == 0) {
+			// 4-up
+			xscale = quad1 - 2.0 * border;
+			yscale = quad2 - 2.0 * border * aspect;
+			x0 = 0.0 + border;
+			y0 = quad1 + border * aspect;
+		} else {
+			// Waveform
+			xscale = 1.0 - 2.0 * border;
+			yscale = 1.0 - 2.0 * border * aspect;
+			x0 = 0.0 + border;
+			y0 = 0.0 + border * aspect;
+		}
+		int maxvert = yscale * (h - 1);
+		int minvert = y0;
+
+		for(int i = offset; i < offset + pixels; i++) {
+			int y = i / w;
+			int x = i % w;
+
+			half *frontpix = (half *) (frontbuf + y * onerow + x * onepix);
+
+			for(int colour = 0; colour < 3; colour++) {
+				int vert = frontpix[colour] * SparkFloat8.Value * yscale * h;
+				if(vert > maxvert) vert = maxvert;
+				if(vert < minvert) vert = minvert;
+				half *resultpix = (half *) (resultbuf + (int)(y0 * h) * onerow + vert * onerow + (int)(x0 * w) * onepix + (int)(x * xscale) * onepix);
+				resultpix[colour] += SparkFloat7.Value;
+			}
+		}
+	}
+
+	// RGB Parade
+	if(SparkPup6.Value == 0 || SparkPup6.Value == 3) {
+		float xscale, yscale, x0, y0;
+		if(SparkPup6.Value == 0) {
+			// 4-up
+			xscale = quad2 - 2.0 * border;
+			yscale = quad1 - 2.0 * border * aspect;
+			x0 = quad1 + border;
+			y0 = 0.0 + border * aspect;
+		} else {
+			// RGB Parade
+			xscale = 1.0 - 2.0 * border;
+			yscale = 1.0 - 2.0 * border * aspect;
+			x0 = 0.0 + border;
+			y0 = 0.0 + border * aspect;
+		}
+		int maxvert = yscale * (h - 1);
+		int minvert = y0;
+
+		for(int i = offset; i < offset + pixels; i++) {
+			int y = i / w;
+			int x = i % w;
+
+			half *frontpix = (half *) (frontbuf + y * onerow + x * onepix);
+
+			for(int colour = 0; colour < 3; colour++) {
+				int vert = frontpix[colour] * SparkFloat8.Value * yscale * h;
+				if(vert > maxvert) vert = maxvert;
+				if(vert < minvert) vert = minvert;
+				half *resultpix = (half *) (resultbuf + (int)(y0 * h) * onerow + vert * onerow + (int)((x0 * w) + ((colour/(3.0-border*6)) * xscale * w)) * onepix + (int)(x * xscale * (1.0/(3.0+border*12))) * onepix);
+				resultpix[colour] += SparkFloat7.Value;
+			}
+		}
+	}
+
+	// Vectorscope
+	if(SparkPup6.Value == 0 || SparkPup6.Value == 2) {
+		float xscale, yscale, x0, y0;
+		if(SparkPup6.Value == 0) {
+			// 4-up
+			xscale = quad2 - 2.0 * border;
+			yscale = quad2 - 2.0 * border * aspect;
+			x0 = quad1 + border * aspect;
+			y0 = quad1 + border * aspect;
+		} else {
+			// Vectorscope
+			xscale = 1.0 - 2.0 * border;
+			yscale = 1.0 - 2.0 * border * aspect;
+			x0 = 0.0 + border * aspect;
+			y0 = 0.0 + border * aspect;
+		}
+
+		for(int i = offset; i < offset + pixels; i++) {
+			int y = i / w;
+			int x = i % w;
+
+			half *frontpix = (half *) (frontbuf + y * onerow + x * onepix);
+			half r = frontpix[0];
+			half g = frontpix[1];
+			half b = frontpix[2];
+
+			float yy =  0.299 * r + 0.587 * g + 0.114  * b;
+			float cb = -0.169 * r - 0.331 * g + 0.499  * b;
+			float cr =  0.499 * r - 0.418 * g - 0.0813 * b;
+			cr *= (float)h/(float)w;
+			if(cb >  0.5) cb =  0.5;
+			if(cb < -0.5) cb = -0.5;
+			if(cr >  0.5) cr =  0.5;
+			if(cr < -0.5) cr = -0.5;
+			cb *= -0.95;
+			cr *= 0.95;
+			cb += 0.5;
+			cr += 0.5;
+
+			char *o = resultbuf;
+			o += (int)(((y0 * h) + (cb * yscale * h))) * onerow;
+			o += (int)(((x0 * w) + (cr * xscale * w))) * onepix;
+
+			half *resultpix = (half *) o;
+			resultpix[0] += SparkFloat7.Value * r;
+			resultpix[1] += SparkFloat7.Value * g;
+			resultpix[2] += SparkFloat7.Value * b;
+		}
+	}
+}
+
 // Miscellaneous events callback
 void SparkEvent(SparkModuleEvent e) {
 	switch(e) {
@@ -340,14 +504,20 @@ unsigned long *SparkProcess(SparkInfoStruct si) {
 	SparkMemBufStruct result, input;
 
 	if(!getbuf(1, &result)) return(NULL);
+	if(!getbuf(2, &input)) return(NULL);
 
+	if(nextmode == 1) {
+		// CPU scopes
+		memset(result.Buffer, 0, result.BufSize);
+		sparkMpFork((void(*)())scopeThread, 2, &input, &result);
+		return(result.Buffer);
+	}
 	if(nextmode == 2) {
 		// GPU scopes
 		memset(result.Buffer, 0, result.BufSize);
 		return(result.Buffer);
 	} else {
 		// Pass through front
-		if(!getbuf(2, &input)) return(NULL);
 		sparkCopyBuffer(input.Buffer, result.Buffer);
 		return(result.Buffer);
 	}
