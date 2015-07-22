@@ -19,8 +19,11 @@ typedef struct {
 	float x, y;
 } vert;
 
-int sampling = 0;
-int nextmode = 1;
+// Global state
+int sampling = 0;	// 1 when we're picking from the image
+int nextmode = 1;	// mode to switch to next, numbered as per the UI pages
+
+// GPU scopes globals
 GLuint prog, vshad;
 half *ramp;
 const char * vshadsrc = "void main() {\
@@ -34,6 +37,7 @@ const char * vshadsrc = "void main() {\
 	}\
 	";
 
+// Forward declares for UI callbacks
 unsigned long *cbPick(int v, SparkInfoStruct i);
 unsigned long *scopeUICallback(int n, SparkInfoStruct si);
 
@@ -43,17 +47,17 @@ float luma(colour c) {
 
 int getbuf(int n, SparkMemBufStruct *b) {
 	if(!sparkMemGetBuffer(n, b)) {
-		printf("Failed to get buffer %d\n", n);
+		printf("Ls_Scoops: failed to get buffer %d\n", n);
 		return(0);
 	}
 	if(!(b->BufState & MEMBUF_LOCKED)) {
-		printf("Failed to lock buffer %d\n", n);
+		printf("Ls_Scoops: failed to lock buffer %d\n", n);
 		return(0);
 	}
 	return(1);
 }
 
-// UI
+// UI controls
 // CPU scopes
 SparkPupStruct SparkPup6 = {
 	0,							// Value
@@ -544,21 +548,20 @@ half closest(SparkMemBufStruct *in, float x, float y, int colour) {
 
 // Draw OpenGL overlay per frame
 void SparkOverlay(SparkInfoStruct si, float zoom) {
-	float ratio = sparkGetViewerRatio();
+	if(si.Context == SPARK_MODE_CONTROL1) {
+		// CPU Scopes
+		return;
+	}
 
+	float ratio = sparkGetViewerRatio();
 	if(zoom < 1.0) {
 	    zoom = 1.0 / (2.0 - zoom);
 	}
-
 	float w = si.FrameWidth * ratio * zoom;
 	float h = si.FrameHeight * zoom;
 	vert o = {si.FrameBufferX, si.FrameBufferY};
 	vert p = {o.x + w, o.y + h};
 
-	if(si.Context == SPARK_MODE_CONTROL1) {
-		// CPU Scopes
-		return;
-	}
 	if(si.Context == SPARK_MODE_CONTROL2) {
 		// GPU Scopes
 		SparkMemBufStruct input;
