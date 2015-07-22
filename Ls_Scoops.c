@@ -81,6 +81,13 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 	float border = SparkFloat9.Value / 100.0;
 	float quad1 = SparkFloat10.Value;
 	float quad2 = 1.0 - SparkFloat10.Value;
+	if(quad2 < border + 0.01) {
+		quad2 = border + 0.01;
+		quad1 = 1.0 - quad2;
+	} else if(quad1 < border + 0.01) {
+		quad1 = border + 0.01;
+		quad2 = 1.0 - quad1;
+	}
 
 	unsigned long offset, pixels;
 	sparkMpInfo(&offset, &pixels);
@@ -169,7 +176,7 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 				int vert = frontpix[colour] * SparkFloat8.Value * yscale * h;
 				if(vert > maxvert) vert = maxvert;
 				if(vert < minvert) vert = minvert;
-				half *resultpix = (half *) (resultbuf + (int)(y0 * h) * onerow + vert * onerow + (int)((x0 * w) + ((colour/2.85) * xscale * w)) * onepix + (int)(x * xscale * (1.0/3.3)) * onepix);
+				half *resultpix = (half *) (resultbuf + (int)(y0 * h) * onerow + vert * onerow + (int)((x0 * w) + ((colour/(3.0-border*6)) * xscale * w)) * onepix + (int)(x * xscale * (1.0/(3.0+border*12))) * onepix);
 				resultpix[colour] += SparkFloat7.Value;
 			}
 		}
