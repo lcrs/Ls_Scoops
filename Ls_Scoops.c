@@ -511,11 +511,6 @@ unsigned long *SparkProcess(SparkInfoStruct si) {
 		memset(result.Buffer, 0, result.BufSize);
 		sparkMpFork((void(*)())scopeThread, 2, &input, &result);
 		return(result.Buffer);
-	}
-	if(nextmode == 2) {
-		// GPU scopes
-		memset(result.Buffer, 0, result.BufSize);
-		return(result.Buffer);
 	} else {
 		// Pass through front
 		sparkCopyBuffer(input.Buffer, result.Buffer);
