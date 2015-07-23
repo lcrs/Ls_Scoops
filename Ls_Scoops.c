@@ -607,8 +607,6 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
 		glDrawArrays(GL_LINE_STRIP, 0, input.BufWidth * input.BufHeight);
-		glFlush();
-		glFinish();
 		glDisable(GL_BLEND);
 		glUseProgram(0);
 
