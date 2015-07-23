@@ -58,7 +58,14 @@ int getbuf(int n, SparkMemBufStruct *b) {
 }
 
 // UI controls
-// CPU scopes
+// CPU scopes - page 1, controls 6-34
+//	6		13		20		27		34
+//	7		14		21		28
+//	8		15		22		29
+//	9		16		23		30
+//	10		17		24		31
+//	11		18		25		32
+//	12		19		26		33
 SparkPupStruct SparkPup6 = {
 	0,							// Value
 	4,							// Count
@@ -105,7 +112,14 @@ SparkFloatStruct SparkFloat10 = {
 	scopeUICallback				// Callback
 };
 
-// GPU scopes
+// GPU scopes - page 2, controls 35-63
+//	35		42		49		56		63
+//	36		43		50		57
+//	37		44		51		58
+//	38		45		52		59
+//	39		46		53		60
+//	40		47		54		61
+//	41		48		55		62
 SparkFloatColorStruct SparkFloatColor39 = {
 	0.016, 0.010, 0.024, NULL	// RGB, callback
 };
@@ -119,7 +133,14 @@ SparkIntStruct SparkInt41 = {
 	NULL						// Callback
 };
 
-// Sampler
+// Sampler - page 3, controls 64-92
+//	64		71		78		85		92
+//	65		72		79		86
+//	66		73		80		87
+//	67		74		81		88
+//	68		75		82		89
+//	69		76		83		90
+//	70		77		84		91
 SparkBooleanStruct SparkBoolean64 = {
 	0,
 	(char *) "Pick sample location...",
@@ -180,7 +201,14 @@ SparkFloatStruct SparkFloat70 = {
 	NULL						// Callback
 };
 
-// Slicer
+// Slicer - page 4, controls 93-121
+//	93		100		107		114		121
+//	94		101		108		115
+//	95		102		109		116
+//	96		103		110		117
+//	97		104		111		118
+//	98		105		112		119
+//	99		106		113		120
 SparkIntStruct SparkInt93 = {
 	0,							// Initial
 	0,							// Min
@@ -672,10 +700,10 @@ unsigned int SparkInitialise(SparkInfoStruct si) {
 	glAttachShader(prog, vshad);
 	glLinkProgram(prog);
 
-	sparkControlTitle(SPARK_CONTROL_1, (char *) "CPU Scopes"); // controls 6 to 34
-	sparkControlTitle(SPARK_CONTROL_2, (char *) "GPU Scopes"); // controls 35 to 63
-	sparkControlTitle(SPARK_CONTROL_3, (char *) "Sampler");    // controls 64 to 92
-	sparkControlTitle(SPARK_CONTROL_4, (char *) "Slicer");     // controls 93 to 121
+	sparkControlTitle(SPARK_CONTROL_1, (char *) "CPU Scopes");
+	sparkControlTitle(SPARK_CONTROL_2, (char *) "GPU Scopes");
+	sparkControlTitle(SPARK_CONTROL_3, (char *) "Sampler");
+	sparkControlTitle(SPARK_CONTROL_4, (char *) "Slicer");
 	return(SPARK_MODULE);
 }
 
