@@ -485,7 +485,7 @@ void scopeThread(SparkMemBufStruct *front, SparkMemBufStruct *result) {
 			float yy =  0.299 * r + 0.587 * g + 0.114  * b;
 			float cb = -0.169 * r - 0.331 * g + 0.499  * b;
 			float cr =  0.499 * r - 0.418 * g - 0.0813 * b;
-			cr *= (float)h/(float)w;
+			cr *= (h*yscale)/(w*xscale);
 			if(cb >  0.5) cb =  0.5;
 			if(cb < -0.5) cb = -0.5;
 			if(cr >  0.5) cr =  0.5;
