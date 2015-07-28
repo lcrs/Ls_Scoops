@@ -27,15 +27,15 @@ int nextmode = 1;	// mode to switch to next, numbered as per the UI pages
 GLuint prog, vshad;
 half *ramp;
 const char * vshadsrc = "void main() {\
-		vec4 v;\
-		v.y = gl_Color.g * 400.0 + 600.0;\
-		v.x = gl_Vertex.x * 0.4 + 20.0;\
-		v.z = 0.0;\
-		v.w = 1.0;\
-		gl_Position = gl_ModelViewProjectionMatrix * v;\
-    	gl_FrontColor = vec4(0.1, 0.06, 0.02, 1.0);\
-	}\
-	";
+                         	vec4 v;\
+                         	v.y = gl_Color.g * 400.0 + 600.0;\
+                         	v.x = gl_Vertex.x * 0.4 + 20.0;\
+                         	v.z = 0.0;\
+                         	v.w = 1.0;\
+                         	gl_Position = gl_ModelViewProjectionMatrix * v;\
+                         	gl_FrontColor = vec4(0.1, 0.06, 0.02, 1.0);\
+                         }\
+                         ";
 
 // Forward declares for UI callbacks
 unsigned long *cbPick(int v, SparkInfoStruct i);
@@ -67,49 +67,49 @@ int getbuf(int n, SparkMemBufStruct *b) {
 //	11		18		25		32
 //	12		19		26		33
 SparkPupStruct SparkPup6 = {
-	0,							// Value
-	4,							// Count
-	scopeUICallback,			// Callback
-	{"4-up",					// Titles
+	0,                          // Value
+	4,                          // Count
+	scopeUICallback,            // Callback
+	{"4-up",                    // Titles
 	 "Waveform",
 	 "Vectorscope",
 	 "RGB Parade"}
 };
 SparkFloatStruct SparkFloat7 = {
-	0.03,						// Value
-	-INFINITY,					// Min
-	+INFINITY,					// Max
-	0.002,						// Increment
-	0,							// Flags
-	(char *) "Intensity %.4f",	// Title
-	scopeUICallback				// Callback
+	0.03,                       // Value
+	-INFINITY,                  // Min
+	+INFINITY,                  // Max
+	0.002,                      // Increment
+	0,                          // Flags
+	(char *) "Intensity %.4f",  // Title
+	scopeUICallback             // Callback
 };
 SparkFloatStruct SparkFloat8 = {
-	1.0,						// Value
-	0.0,						// Min
-	+INFINITY,					// Max
-	0.01,						// Increment
-	0,							// Flags
-	(char *) "Height %.2f",		// Title
-	scopeUICallback				// Callback
+	1.0,                        // Value
+	0.0,                        // Min
+	+INFINITY,                  // Max
+	0.01,                       // Increment
+	0,                          // Flags
+	(char *) "Height %.2f",     // Title
+	scopeUICallback             // Callback
 };
 SparkFloatStruct SparkFloat9 = {
-	2.0,						// Value
-	0.0,						// Min
-	+INFINITY,					// Max
-	0.01,						// Increment
-	0,							// Flags
-	(char *) "Borders %.2f",		// Title
-	scopeUICallback				// Callback
+	2.0,                        // Value
+	0.0,                        // Min
+	+INFINITY,                  // Max
+	0.01,                       // Increment
+	0,                          // Flags
+	(char *) "Borders %.2f",    // Title
+	scopeUICallback             // Callback
 };
 SparkFloatStruct SparkFloat10 = {
-	0.5,						// Value
-	0.01,						// Min
-	0.99,						// Max
-	0.01,						// Increment
-	0,							// Flags
-	(char *) "Quadness %.2f",	// Title
-	scopeUICallback				// Callback
+	0.5,                        // Value
+	0.01,                       // Min
+	0.99,                       // Max
+	0.01,                       // Increment
+	0,                          // Flags
+	(char *) "Quadness %.2f",   // Title
+	scopeUICallback             // Callback
 };
 
 // GPU scopes - page 2, controls 35-63
@@ -121,16 +121,16 @@ SparkFloatStruct SparkFloat10 = {
 //	40		47		54		61
 //	41		48		55		62
 SparkFloatColorStruct SparkFloatColor39 = {
-	0.016, 0.010, 0.024, NULL	// RGB, callback
+	0.016, 0.010, 0.024, NULL   // RGB, callback
 };
 SparkIntStruct SparkInt41 = {
-	1,							// Initial
-	1,							// Min
-	128,						// Max
-	1,							// Increment
-	SPARK_FLAG_X,				// Flags
-	(char *) "Downres %d",		// Name
-	NULL						// Callback
+	1,                          // Initial
+	1,                          // Min
+	128,                        // Max
+	1,                          // Increment
+	SPARK_FLAG_X,               // Flags
+	(char *) "Downres %d",      // Name
+	NULL                        // Callback
 };
 
 // Sampler - page 3, controls 64-92
@@ -147,58 +147,58 @@ SparkBooleanStruct SparkBoolean64 = {
 	cbPick
 };
 SparkIntStruct SparkInt65 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_X,				// Flags
-	(char *) "Sample at X %d",	// Name
-	NULL						// Callback
+	0,                          // Initial
+	0,                          // Min
+	32768,                      // Max
+	1,                          // Increment
+	SPARK_FLAG_X,               // Flags
+	(char *) "Sample at X %d",  // Name
+	NULL                        // Callback
 };
 SparkIntStruct SparkInt66 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_Y,				// Flags
-	(char *) "Sample at Y %d",	// Name
-	NULL						// Callback
+	0,                          // Initial
+	0,                          // Min
+	32768,                      // Max
+	1,                          // Increment
+	SPARK_FLAG_Y,               // Flags
+	(char *) "Sample at Y %d",  // Name
+	NULL                        // Callback
 };
 SparkFloatStruct SparkFloat67 = {
-	0.0,						// Initial
-	-INFINITY,					// Min
-	+INFINITY,					// Max
-	0.001,						// Increment
-	SPARK_FLAG_NO_INPUT ,		// Flags
-	(char *) "R %f",			// Name
-	NULL						// Callback
+	0.0,                        // Initial
+	-INFINITY,                  // Min
+	+INFINITY,                  // Max
+	0.001,                      // Increment
+	SPARK_FLAG_NO_INPUT,        // Flags
+	(char *) "R %f",            // Name
+	NULL                        // Callback
 };
 SparkFloatStruct SparkFloat68 = {
-	0.0,						// Initial
-	-INFINITY,					// Min
-	+INFINITY,					// Max
-	0.001,						// Increment
-	SPARK_FLAG_NO_INPUT ,		// Flags
-	(char *) "G %f",			// Name
-	NULL						// Callback
+	0.0,                        // Initial
+	-INFINITY,                  // Min
+	+INFINITY,                  // Max
+	0.001,                      // Increment
+	SPARK_FLAG_NO_INPUT,        // Flags
+	(char *) "G %f",            // Name
+	NULL                        // Callback
 };
 SparkFloatStruct SparkFloat69 = {
-	0.0,						// Initial
-	-INFINITY,					// Min
-	+INFINITY,					// Max
-	0.001,						// Increment
-	SPARK_FLAG_NO_INPUT ,		// Flags
-	(char *) "B %f",			// Name
-	NULL						// Callback
+	0.0,                        // Initial
+	-INFINITY,                  // Min
+	+INFINITY,                  // Max
+	0.001,                      // Increment
+	SPARK_FLAG_NO_INPUT,        // Flags
+	(char *) "B %f",            // Name
+	NULL                        // Callback
 };
 SparkFloatStruct SparkFloat70 = {
-	0.0,						// Initial
-	-INFINITY,					// Min
-	+INFINITY,					// Max
-	0.001,						// Increment
-	SPARK_FLAG_NO_INPUT ,		// Flags
-	(char *) "Luma %f",			// Name
-	NULL						// Callback
+	0.0,                        // Initial
+	-INFINITY,                  // Min
+	+INFINITY,                  // Max
+	0.001,                      // Increment
+	SPARK_FLAG_NO_INPUT,        // Flags
+	(char *) "Luma %f",         // Name
+	NULL                        // Callback
 };
 
 // Slicer - page 4, controls 93-121
@@ -210,40 +210,40 @@ SparkFloatStruct SparkFloat70 = {
 //	98		105		112		119
 //	99		106		113		120
 SparkIntStruct SparkInt93 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_X,				// Flags
-	(char *) "From X %d",		// Name
-	NULL						// Callback
+	0,                          // Initial
+	0,                          // Min
+	32768,                      // Max
+	1,                          // Increment
+	SPARK_FLAG_X,               // Flags
+	(char *) "From X %d",       // Name
+	NULL                        // Callback
 };
 SparkIntStruct SparkInt94 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_Y,				// Flags
-	(char *) "From Y %d",		// Name
-	NULL						// Callback
+	0,                          // Initial
+	0,                          // Min
+	32768,                      // Max
+	1,                          // Increment
+	SPARK_FLAG_Y,               // Flags
+	(char *) "From Y %d",       // Name
+	NULL                        // Callback
 };
 SparkIntStruct SparkInt95 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_X,				// Flags
-	(char *) "To X %d",			// Name
-	NULL						// Callback
+	0,                          // Initial
+	0,                          // Min
+	32768,                      // Max
+	1,                          // Increment
+	SPARK_FLAG_X,               // Flags
+	(char *) "To X %d",         // Name
+	NULL                        // Callback
 };
 SparkIntStruct SparkInt96 = {
-	0,							// Initial
-	0,							// Min
-	32768,						// Max
-	1,							// Increment
-	SPARK_FLAG_Y,				// Flags
-	(char *) "To Y %d",			// Name
-	NULL						// Callback
+	0,                          // Initial
+	0,                          // Min
+	32768,                      // Max
+	1,                          // Increment
+	SPARK_FLAG_Y,               // Flags
+	(char *) "To Y %d",         // Name
+	NULL                        // Callback
 };
 
 // Pick button callback
@@ -586,7 +586,7 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 
 	float ratio = sparkGetViewerRatio();
 	if(zoom < 1.0) {
-	    zoom = 1.0 / (2.0 - zoom);
+		zoom = 1.0 / (2.0 - zoom);
 	}
 	float w = si.FrameWidth * ratio * zoom;
 	float h = si.FrameHeight * zoom;
