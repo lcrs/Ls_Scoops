@@ -3,7 +3,7 @@
 // lewis@lewissaunders.com
 
 #include "half.h"
-#include "/usr/discreet/presets/2016/sparks/spark.h"
+#include "/usr/discreet/presets/2016.0.3/sparks/spark.h"
 
 #ifdef __APPLE__
 	#include <OpenGL/gl.h>
@@ -333,10 +333,10 @@ void sample(SparkInfoStruct si, SparkMemBufStruct buf) {
 			printf("Unhandled pixel format what the hell?\n");
 			sampled = (colour) {0.0, 0.0, 0.0};
 	}
-	sparkSetCurveKey(SPARK_UI_CONTROL, 67, si.FrameNo, sampled.r);
-	sparkSetCurveKey(SPARK_UI_CONTROL, 68, si.FrameNo, sampled.g);
-	sparkSetCurveKey(SPARK_UI_CONTROL, 69, si.FrameNo, sampled.b);
-	sparkSetCurveKey(SPARK_UI_CONTROL, 70, si.FrameNo, luma(sampled));
+	sparkSetCurveKey(SPARK_UI_CONTROL, 67, si.FrameNo+1, sampled.r);
+	sparkSetCurveKey(SPARK_UI_CONTROL, 68, si.FrameNo+1, sampled.g);
+	sparkSetCurveKey(SPARK_UI_CONTROL, 69, si.FrameNo+1, sampled.b);
+	sparkSetCurveKey(SPARK_UI_CONTROL, 70, si.FrameNo+1, luma(sampled));
 	sparkControlUpdate(67);
 	sparkControlUpdate(68);
 	sparkControlUpdate(69);
@@ -555,7 +555,7 @@ unsigned long *SparkAnalyse(SparkInfoStruct si) {
 	SparkMemBufStruct result, input;
 	if(!getbuf(1, &result)) return(NULL);
 	if(!getbuf(2, &input)) return(NULL);
-	
+
 	sample(si, input);
 
 	sparkCopyBuffer(input.Buffer, result.Buffer);
