@@ -24,4 +24,4 @@ spark.h: Makefile
 	ln -sf `ls /usr/discreet/presets/*/sparks/spark.h | head -n1` spark.h
 
 clean:
-	rm -f Ls_Scoops.spark Ls_Scoops.spark_x86_64 Ls_Scoops.o spark.h
+	rm -f Ls_Scoops.$(EXT) Ls_Scoops.o spark.h
