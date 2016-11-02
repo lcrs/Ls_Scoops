@@ -3,7 +3,7 @@
 // lewis@lewissaunders.com
 
 #include "half.h"
-#include "/usr/discreet/presets/2016.0.3/sparks/spark.h"
+#include "spark.h"
 
 #ifdef __APPLE__
 	#include <OpenGL/gl.h>
@@ -266,7 +266,7 @@ unsigned long* SparkInteract(SparkInfoStruct si, int sx, int sy, float pressure,
 			// Pick sample point
 			sampling = 1;
 			SparkInt65.Value = vx;
-			SparkInt93.Value = vy;
+			SparkInt66.Value = vy;
 			sparkControlUpdate(65);
 			sparkControlUpdate(66);
 			SparkAnalyse(si);
@@ -322,7 +322,7 @@ void sample(SparkInfoStruct si, SparkMemBufStruct buf) {
 			char *b;
 			half *pix;
 			b = (char *) buf.Buffer;
-			b += buf.Stride * SparkInt93.Value;
+			b += buf.Stride * SparkInt66.Value;
 			b += buf.Inc * SparkInt65.Value;
 			pix = (half *) b;
 			sampled.r = (float) *pix;
@@ -515,7 +515,7 @@ void SparkEvent(SparkModuleEvent e) {
 			sparkReprocess();
 			break;
 		case SPARK_EVENT_CONTROL2:
-			nextmode = 2;
+			nextmode = 1;
 			sparkReprocess();
 			break;
 		case SPARK_EVENT_CONTROL3:
@@ -595,7 +595,7 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 
 	if(si.Context == SPARK_MODE_CONTROL2) {
 		// GPU Scopes
-		SparkMemBufStruct input;
+		/*SparkMemBufStruct input;
 		if(!getbuf(2, &input)) return;
 
 		glEnableClientState(GL_VERTEX_ARRAY);
@@ -611,16 +611,16 @@ void SparkOverlay(SparkInfoStruct si, float zoom) {
 		glUseProgram(0);
 
 		glDisableClientState(GL_COLOR_ARRAY);
-		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_VERTEX_ARRAY);*/
 	}
 	if(si.Context == SPARK_MODE_CONTROL3) {
 		// Sampler
 		glBegin(GL_LINE_LOOP);
 		glColor3f(1.0, 0.0, 0.0);
-		glVertex2f(o.x + (ratio * zoom * (float)SparkInt65.Value - 10.0), o.y + (zoom * (float)SparkInt93.Value) - 10.0);
-		glVertex2f(o.x + (ratio * zoom * (float)SparkInt65.Value + 10.0), o.y + (zoom * (float)SparkInt93.Value) - 10.0);
-		glVertex2f(o.x + (ratio * zoom * (float)SparkInt65.Value + 10.0), o.y + (zoom * (float)SparkInt93.Value) + 10.0);
-		glVertex2f(o.x + (ratio * zoom * (float)SparkInt65.Value - 10.0), o.y + (zoom * (float)SparkInt93.Value) + 10.0);
+		glVertex2f(o.x + (ratio * zoom * (float)SparkInt65.Value - 10.0), o.y + (zoom * (float)SparkInt66.Value) - 10.0);
+		glVertex2f(o.x + (ratio * zoom * (float)SparkInt65.Value + 10.0), o.y + (zoom * (float)SparkInt66.Value) - 10.0);
+		glVertex2f(o.x + (ratio * zoom * (float)SparkInt65.Value + 10.0), o.y + (zoom * (float)SparkInt66.Value) + 10.0);
+		glVertex2f(o.x + (ratio * zoom * (float)SparkInt65.Value - 10.0), o.y + (zoom * (float)SparkInt66.Value) + 10.0);
 		glEnd();
 		return;
 	}
@@ -684,7 +684,7 @@ void SparkMemoryTempBuffers(void) {
 // Module level, not desktop
 unsigned int SparkInitialise(SparkInfoStruct si) {
 	// One-time init for GPU scopes
-	ramp = (half *) malloc(si.FrameWidth * si.FrameHeight * sizeof(half) * 2);
+	/*ramp = (half *) malloc(si.FrameWidth * si.FrameHeight * sizeof(half) * 2);
 	for(int i = 0; i < si.FrameHeight; i++) {
 		for(int j = 0; j < si.FrameWidth; j++) {
 			ramp[si.FrameWidth * 2 * i + j * 2] = j;
@@ -696,10 +696,10 @@ unsigned int SparkInitialise(SparkInfoStruct si) {
 	glShaderSource(vshad, 1, &vshadsrc, NULL);
 	glCompileShader(vshad);
 	glAttachShader(prog, vshad);
-	glLinkProgram(prog);
+	glLinkProgram(prog);*/
 
 	sparkControlTitle(SPARK_CONTROL_1, (char *) "CPU Scopes");
-	sparkControlTitle(SPARK_CONTROL_2, (char *) "GPU Scopes");
+	sparkControlTitle(SPARK_CONTROL_2, (char *) " ");
 	sparkControlTitle(SPARK_CONTROL_3, (char *) "Sampler");
 	sparkControlTitle(SPARK_CONTROL_4, (char *) "Slicer");
 	return(SPARK_MODULE);
